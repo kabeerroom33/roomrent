@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Sign In — Room Rent Manager{% endblock %}
+{% block content %}
+<div style="min-height:calc(100vh - 130px);display:grid;place-items:center;padding:1.5rem 0;">
+  <section class="card" style="width:min(440px,100%);padding:2rem;border-top:4px solid var(--accent);">
+    <div style="font-size:.8rem;font-weight:700;color:var(--secondary);text-transform:uppercase;margin-bottom:.5rem;">Room 33</div>
+    <h1 class="page-title" style="margin-bottom:.35rem;">Rent Manager</h1>
+    <p class="text-muted" style="margin-bottom:1.5rem;">Sign in to manage client accounts and rent payments.</p>
+    <form method="post" action="{{ url_for('login') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" required autofocus/>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required/>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:.65rem 1rem;">Sign in</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

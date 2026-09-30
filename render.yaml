@@ -1,0 +1,29 @@
+# Render.com deployment configuration
+services:
+  - type: web
+    name: roomrent
+    env: python
+    region: oregon
+    rootDir: rent-app
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: roomrent-db
+          property: connectionString
+      - key: ROOM_NAME
+        value: Room 33
+      - key: RENDER
+        value: true
+      - key: ADMIN_PASSWORD_HASH
+        value: ""   # Set this in Render dashboard — run: python3 -c "from werkzeug.security import generate_password_hash; print(generate_password_hash('YOUR_PASSWORD'))"
+
+databases:
+  - name: roomrent-db
+    databaseName: roomrent
+    user: roomrent_user
+    region: oregon
+    plan: free

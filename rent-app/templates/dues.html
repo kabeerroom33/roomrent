@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Dues Report — Rent Manager{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">⚠️ Outstanding Dues — {{ year }}</div>
+    <div class="text-muted">{{ dues|length }} clients with outstanding balances</div>
+  </div>
+  <div class="btn-group">
+    {% for available_year in years %}
+      <a href="{{ url_for('dues_report', year=available_year) }}"
+         class="btn {% if year==available_year %}btn-primary{% else %}btn-outline{% endif %}">{{ available_year }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat danger">
+    <div class="stat-label">Total Outstanding</div>
+    <div class="stat-value">AED {{ "{:,.0f}".format(total) }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Clients with Dues</div>
+    <div class="stat-value">{{ dues|length }}</div>
+  </div>
+</div>
+
+{% if dues %}
+<div class="card">
+  <div class="card-title">⚠️ Dues List (Highest First)</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Mobile</th>
+          <th class="text-right">Outstanding Balance</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in dues %}
+        <tr>
+          <td style="color:var(--muted);font-weight:600;">{{ loop.index }}</td>
+          <td>
+            <div class="id-badge" style="width:36px;height:36px;font-size:.8rem;">{{ d.id }}</div>
+          </td>
+          <td>
+            <a href="{{ url_for('client_detail', client_id=d.id, year=year) }}"
+               style="font-weight:600;color:var(--secondary);text-decoration:none;">
+              {{ d.name }}
+            </a>
+          </td>
+          <td>{{ d.mobile or '—' }}</td>
+          <td class="text-right">
+            <span class="amount-positive" style="font-size:1rem;">AED {{ "{:,.0f}".format(d.balance) }}</span>
+          </td>
+          <td>
+            <a href="{{ url_for('client_detail', client_id=d.id, year=year) }}" class="btn btn-primary btn-sm">View / Pay</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="background:var(--light);font-weight:700;">
+          <td colspan="4">TOTAL OUTSTANDING</td>
+          <td class="text-right amount-positive" style="font-size:1rem;">AED {{ "{:,.0f}".format(total) }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:3rem;">
+  <div style="font-size:3rem;">🎉</div>
+  <div style="font-size:1.2rem;font-weight:700;color:var(--success);margin-top:.5rem;">No Outstanding Dues!</div>
+  <div class="text-muted">All clients are fully paid for {{ year }}</div>
+</div>
+{% endif %}
+
+{% endblock %}

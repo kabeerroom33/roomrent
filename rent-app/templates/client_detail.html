@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}{{ data.client.name }} — {{ room_name }}{% endblock %}
+{% block content %}
+{% set client = data.client %}
+{% set payments = data.payments %}
+{% set old_bal = data.old_balance %}
+
+<div class="page-header">
+  <div>
+    <div style="font-size:.8rem;margin-bottom:.2rem;">
+      <a href="{{ url_for('dashboard', year=year) }}" style="color:var(--secondary);text-decoration:none;">← Dashboard</a>
+    </div>
+    <div class="page-title" style="font-size:1.1rem;">{{ client.name }}</div>
+    <div class="text-muted">ID #{{ "%04d"|format(client.id) }} · {{ year }}</div>
+  </div>
+  <div class="btn-group">
+    <a href="{{ url_for('edit_client', client_id=client.id) }}" class="btn btn-outline btn-sm">✏️ Edit</a>
+    <a href="{{ url_for('generate_full_statement', client_id=client.id, year=year) }}" class="btn btn-accent btn-sm">📄 PDF</a>
+  </div>
+</div>
+
+<!-- Client info card -->
+<div class="card" style="border-left:4px solid var(--secondary);padding:.9rem;">
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;">
+    <div>
+      <div class="text-muted" style="font-size:.72rem;">CLIENT ID</div>
+      <div style="font-size:1.4rem;font-weight:800;color:var(--primary);">#{{ "%04d"|format(client.id) }}</div>
+    </div>
+    <div>
+      <div class="text-muted" style="font-size:.72rem;">MOBILE</div>
+      <div style="font-weight:600;">
+        {% if client.mobile %}
+          <a href="tel:{{ client.mobile }}" style="color:var(--secondary);text-decoration:none;">{{ client.mobile }}</a>
+        {% else %}—{% endif %}
+      </div>
+    </div>
+    <div>
+      <div class="text-muted" style="font-size:.72rem;">ROOM</div>
+      <div style="font-weight:600;">{{ client.room_no or '—' }}</div>
+    </div>
+    <div>
+      <div class="text-muted" style="font-size:.72rem;">MONTHLY RENT</div>
+      <div style="font-weight:600;">AED {{ client.monthly_rent|int }}</div>
+    </div>
+    {% if old_bal != 0 %}
+    <div>
+      <div class="text-muted" style="font-size:.72rem;">OLD BALANCE B/F</div>
+      <div style="font-weight:700;color:{% if old_bal>0%}var(--danger){%else%}var(--success){%endif%};">
+        AED {{ "{:,.0f}".format(old_bal) }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Action buttons -->
+  <div class="btn-group" style="margin-top:.9rem;">
+    {% if client.mobile %}
+    <button class="btn btn-wa btn-sm"
+      onclick="shareWhatsApp('{{ client.mobile }}',
+      'Dear {{ client.name }},\n\nYour rent summary for {{ room_name }} — {{ year }}:\n' +
+      '• Total Due: AED {{ '{:,.0f}'.format(data.total_due) }}\n' +
+      '• Total Paid: AED {{ '{:,.0f}'.format(data.total_paid) }}\n' +
+      '• Balance: AED {{ '{:,.0f}'.format(data.total_balance) }}\n\nThank you.')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.099 1.523 5.82L.057 23.854a.5.5 0 0 0 .61.61l6.103-1.48A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.9 0-3.673-.525-5.183-1.435l-.363-.217-3.762.912.928-3.672-.236-.378A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+      WhatsApp
+    </button>
+    {% endif %}
+
+    <!-- Hide/Restore -->
+    {% if client.is_hidden %}
+    <form method="post" action="{{ url_for('restore_client', client_id=client.id) }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+      <button class="btn btn-ghost btn-sm">👁 Restore</button>
+    </form>
+    {% else %}
+    <form method="post" action="{{ url_for('hide_client', client_id=client.id) }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+      <button class="btn btn-ghost btn-sm">🙈 Hide</button>
+    </form>
+    {% endif %}
+    <button class="btn btn-danger btn-sm"
+      onclick="openDeleteModal({{ client.id }}, '{{ client.name }}')">🗑️ Delete</button>
+  </div>
+</div>
+
+<!-- Year balance summary -->
+<div class="stats" style="grid-template-columns:repeat(3,1fr);">
+  <div class="stat accent">
+    <div class="stat-label">Total Due</div>
+    <div class="stat-value" style="font-size:1rem;">AED {{ "{:,.0f}".format(data.total_due) }}</div>
+  </div>
+  <div class="stat success">
+    <div class="stat-label">Total Paid</div>
+    <div class="stat-value" style="font-size:1rem;">AED {{ "{:,.0f}".format(data.total_paid) }}</div>
+  </div>
+  <div class="stat {% if data.total_balance>0 %}danger{% else %}success{% endif %}">
+    <div class="stat-label">Balance</div>
+    <div class="stat-value" style="font-size:1rem;">AED {{ "{:,.0f}".format(data.total_balance) }}</div>
+  </div>
+</div>
+
+<!-- Monthly grid -->
+<div class="card">
+  <div class="card-title">📅 {{ year }} — Monthly Payments</div>
+  <div class="months-grid">
+    {% for m in months %}
+      {% set p = payments.get(m) %}
+      {% if p %}
+        {% set bal = p.balance|float %}
+        {% set cls = 'paid' if bal<=0 else ('partial' if p.amount_paid|float>0 else 'unpaid') %}
+        <div class="month-card {{ cls }}"
+          onclick="openPayModal({{ client.id }}, {{ year }}, '{{ m }}', '{{ month_names[m] }}', {{ p.amount_due }})">
+          <div class="m-name">{{ month_names[m][:3] }}</div>
+          <div class="m-amt">{{ "{:,.0f}".format(p.amount_paid|float) }}</div>
+          {% if bal > 0 %}
+            <div class="m-bal" style="color:var(--danger);">Bal {{ "{:,.0f}".format(bal) }}</div>
+          {% else %}
+            <div class="m-bal" style="color:var(--success);">✓ Paid</div>
+          {% endif %}
+          <a href="{{ url_for('generate_receipt', client_id=client.id, year=year, month=m) }}"
+             onclick="event.stopPropagation()"
+             style="font-size:.65rem;color:var(--secondary);display:block;margin-top:.25rem;">📄 PDF</a>
+          {% if client.mobile %}
+          <span onclick="event.stopPropagation();
+            shareWhatsApp('{{ client.mobile }}',
+            'Dear {{ client.name }},\nReceipt for {{ month_names[m] }} {{ year }}:\n• Due: AED {{ '{:,.0f}'.format(p.amount_due|float) }}\n• Paid: AED {{ '{:,.0f}'.format(p.amount_paid|float) }}\n• Balance: AED {{ '{:,.0f}'.format(p.balance|float) }}\nThank you — {{ room_name }}.')"
+            style="font-size:.65rem;color:#25D366;display:block;cursor:pointer;">📲 WA</span>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="month-card" style="opacity:.5;"
+          onclick="openPayModal({{ client.id }}, {{ year }}, '{{ m }}', '{{ month_names[m] }}', {{ client.monthly_rent }})">
+          <div class="m-name">{{ month_names[m][:3] }}</div>
+          <div class="m-amt" style="color:var(--muted);">0</div>
+          <div class="m-bal" style="color:var(--muted);">+ Add</div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Payment ledger table -->
+<div class="card">
+  <div class="card-title">📋 Payment Ledger</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th><th class="text-right">Due</th>
+          <th class="text-right">Paid</th><th class="text-right">Bal</th>
+          <th>Method</th><th>Date</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if old_bal != 0 %}
+        <tr style="background:#fefce8;">
+          <td><b>Old Bal B/F</b></td>
+          <td class="text-right">—</td><td class="text-right">—</td>
+          <td class="text-right {% if old_bal>0 %}amount-pos{% else %}amount-ok{% endif %}">
+            AED {{ "{:,.2f}".format(old_bal) }}</td>
+          <td colspan="3"><span class="badge badge-warning">Carried Fwd</span></td>
+        </tr>
+        {% endif %}
+        {% for m in months %}
+          {% set p = payments.get(m) %}{% if p %}
+          <tr>
+            <td><b>{{ month_names[m] }}</b></td>
+            <td class="text-right">{{ "{:,.2f}".format(p.amount_due|float) }}</td>
+            <td class="text-right">{{ "{:,.2f}".format(p.amount_paid|float) }}</td>
+            <td class="text-right {% if p.balance|float>0 %}amount-pos{% else %}amount-ok{% endif %}">
+              {{ "{:,.2f}".format(p.balance|float) }}</td>
+            <td>
+              {% set pm = p.payment_method or 'cash' %}
+              {% if pm=='bank_transfer' %}🏦{% elif pm=='online' %}📱{% elif pm=='cheque' %}📄{% else %}💵{% endif %}
+              {{ pm.replace('_',' ')|title }}
+            </td>
+            <td style="white-space:nowrap;color:var(--muted);font-size:.82rem;">{{ p.paid_date or '—' }}</td>
+            <td>
+              <div class="btn-group">
+                <button class="btn btn-primary btn-sm"
+                  onclick="openPayModal({{ client.id }}, {{ year }}, '{{ m }}', '{{ month_names[m] }}', {{ p.amount_due }})">
+                  + Pay</button>
+                <a href="{{ url_for('generate_receipt', client_id=client.id, year=year, month=m) }}"
+                   class="btn btn-accent btn-sm">📄</a>
+                {% if client.mobile %}
+                <button class="btn btn-wa btn-sm"
+                  onclick="shareWhatsApp('{{ client.mobile }}','Dear {{ client.name }},\nReceipt for {{ month_names[m] }} {{ year }}:\n• Due: AED {{ '{:,.0f}'.format(p.amount_due|float) }}\n• Paid: AED {{ '{:,.0f}'.format(p.amount_paid|float) }}\n• Balance: AED {{ '{:,.0f}'.format(p.balance|float) }}\nTotal Outstanding: AED {{ '{:,.0f}'.format(data.total_balance) }}\nThank you — {{ room_name }}.')">
+                  📲</button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endif %}
+        {% endfor %}
+        <tr style="background:var(--light);font-weight:700;">
+          <td>TOTAL</td>
+          <td class="text-right">{{ "{:,.2f}".format(data.total_due) }}</td>
+          <td class="text-right">{{ "{:,.2f}".format(data.total_paid) }}</td>
+          <td class="text-right {% if data.total_balance>0 %}amount-pos{% else %}amount-ok{% endif %}">
+            {{ "{:,.2f}".format(data.total_balance) }}</td>
+          <td colspan="3">
+            {% if data.total_balance>0 %}<span class="badge badge-danger">Outstanding</span>
+            {% else %}<span class="badge badge-success">✓ Fully Paid</span>{% endif %}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Year switch -->
+<div class="btn-group">
+  <a href="{{ url_for('client_detail', client_id=client.id, year=2025) }}"
+     class="btn btn-sm {% if year==2025 %}btn-primary{% else %}btn-ghost{% endif %}">2025</a>
+  <a href="{{ url_for('client_detail', client_id=client.id, year=2026) }}"
+     class="btn btn-sm {% if year==2026 %}btn-primary{% else %}btn-ghost{% endif %}">2026</a>
+</div>
+
+{% endblock %}

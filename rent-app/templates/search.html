@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Search — Rent Manager{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-title">🔍 Search Results</div>
+</div>
+
+{% if query %}
+  <div class="text-muted" style="margin-bottom:1rem;">
+    Results for: <b>"{{ query }}"</b> — {{ results|length }} found
+  </div>
+{% endif %}
+
+{% if results %}
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Mobile</th>
+          <th>Room</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in results %}
+        <tr>
+          <td>
+            <div class="id-badge" style="width:36px;height:36px;font-size:.8rem;">{{ c.id }}</div>
+          </td>
+          <td><b>{{ c.name }}</b></td>
+          <td>{{ c.mobile or '—' }}</td>
+          <td>{{ c.room_no or '—' }}</td>
+          <td>
+            <a href="{{ url_for('client_detail', client_id=c.id) }}" class="btn btn-primary btn-sm">View Details</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% elif query %}
+<div class="card" style="text-align:center;padding:3rem;">
+  <div style="font-size:3rem;">🔍</div>
+  <div style="font-size:1.1rem;font-weight:600;margin-top:.5rem;">No results found</div>
+  <div class="text-muted">Try searching by client ID number or part of their name</div>
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:3rem;">
+  <div style="font-size:3rem;">🔍</div>
+  <div style="font-size:1.1rem;font-weight:600;margin-top:.5rem;">Search for a client</div>
+  <div class="text-muted">Use the search bar above — enter an ID number or name</div>
+</div>
+{% endif %}
+
+{% endblock %}

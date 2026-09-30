@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ room_name }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">📊 Dashboard</div>
+    <div class="text-muted">{{ room_name }} — {{ year }}</div>
+  </div>
+  <div class="btn-group">
+    <a href="?year=2025{% if show_hidden %}&show_hidden=1{% endif %}"
+       class="btn btn-sm {% if year==2025 %}btn-primary{% else %}btn-ghost{% endif %}">2025</a>
+    <a href="?year=2026{% if show_hidden %}&show_hidden=1{% endif %}"
+       class="btn btn-sm {% if year==2026 %}btn-primary{% else %}btn-ghost{% endif %}">2026</a>
+    <a href="?year={{ year }}&show_hidden={% if show_hidden %}0{% else %}1{% endif %}"
+       class="btn btn-sm btn-ghost">{% if show_hidden %}👁 Hide Hidden{% else %}👁 Show All{% endif %}</a>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-label">Clients</div>
+    <div class="stat-value">{{ summary|length }}</div>
+  </div>
+  <div class="stat accent">
+    <div class="stat-label">Total Due</div>
+    <div class="stat-value" style="font-size:1.1rem;">AED {{ "{:,.0f}".format(total_due) }}</div>
+  </div>
+  <div class="stat success">
+    <div class="stat-label">Collected</div>
+    <div class="stat-value" style="font-size:1.1rem;">AED {{ "{:,.0f}".format(total_paid) }}</div>
+  </div>
+  <div class="stat danger">
+    <div class="stat-label">Outstanding</div>
+    <div class="stat-value" style="font-size:1.1rem;">AED {{ "{:,.0f}".format(total_balance) }}</div>
+  </div>
+</div>
+
+<!-- Filter -->
+<div class="card" style="padding:.65rem .9rem;">
+  <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+    <input type="text" id="filterInput" placeholder="Filter by name or ID…"
+      style="flex:1;min-width:160px;padding:.45rem .8rem;border:1.5px solid var(--border);
+             border-radius:8px;font-size:.9rem;outline:none;"
+      oninput="filterList(this.value)"/>
+    <label style="display:flex;align-items:center;gap:.35rem;font-size:.83rem;
+                  cursor:pointer;white-space:nowrap;user-select:none;">
+      <input type="checkbox" id="duesOnly" onchange="filterList(document.getElementById('filterInput').value)"/>
+      Dues only
+    </label>
+    <a href="{{ url_for('dues_report', year=year) }}" class="btn btn-sm btn-danger">⚠ Full Dues</a>
+    <a href="{{ url_for('add_client') }}" class="btn btn-sm btn-success">+ Client</a>
+  </div>
+</div>
+
+<!-- Client list — card style on mobile, table on desktop -->
+<div class="card" style="padding:0;overflow:hidden;">
+
+  <!-- Mobile list -->
+  <div id="clientList" class="d-mobile">
+    {% for c in summary %}
+    <a class="client-card {% if c.is_hidden %}hidden-tag{% endif %}"
+       href="{{ url_for('client_detail', client_id=c.id, year=year) }}"
+       data-name="{{ c.name }}" data-id="{{ c.id }}" data-balance="{{ c.balance }}">
+      <div class="id-chip">{{ c.id }}</div>
+      <div class="c-info">
+        <div class="c-name">{{ c.name }}</div>
+        <div class="c-sub">{{ c.mobile or '—' }} · {{ c.room_no or '—' }}</div>
+      </div>
+      <div class="c-bal">
+        {% if c.balance > 0 %}
+          <div class="amount-pos" style="font-size:.9rem;">AED {{ "{:,.0f}".format(c.balance) }}</div>
+          <span class="badge badge-danger">Due</span>
+        {% elif c.balance < 0 %}
+          <div style="color:var(--secondary);font-weight:700;font-size:.9rem;">AED {{ "{:,.0f}".format(c.balance) }}</div>
+          <span class="badge badge-info">Adv</span>
+        {% else %}
+          <span class="badge badge-success">Clear</span>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Desktop table -->
+  <div class="table-wrap d-desktop">
+    <table id="clientTable">
+      <thead>
+        <tr>
+          <th>ID</th><th>Name</th><th>Mobile</th><th>Room</th>
+          <th class="text-right">Due</th><th class="text-right">Paid</th>
+          <th class="text-right">Balance</th><th>Status</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in summary %}
+        <tr data-name="{{ c.name }}" data-id="{{ c.id }}" data-balance="{{ c.balance }}"
+            class="{% if c.is_hidden %}hidden-tag{% endif %}">
+          <td><div class="id-chip">{{ c.id }}</div></td>
+          <td>
+            <a href="{{ url_for('client_detail', client_id=c.id, year=year) }}"
+               style="font-weight:600;color:var(--secondary);text-decoration:none;">
+              {{ c.name }}</a>
+          </td>
+          <td>{{ c.mobile or '—' }}</td>
+          <td>{{ c.room_no or '—' }}</td>
+          <td class="text-right">AED {{ "{:,.0f}".format(c.due) }}</td>
+          <td class="text-right">AED {{ "{:,.0f}".format(c.paid) }}</td>
+          <td class="text-right">
+            {% if c.balance > 0 %}<span class="amount-pos">AED {{ "{:,.0f}".format(c.balance) }}</span>
+            {% elif c.balance < 0 %}<span style="color:var(--secondary);font-weight:700;">AED {{ "{:,.0f}".format(c.balance) }}</span>
+            {% else %}<span class="amount-ok">AED 0</span>{% endif %}
+          </td>
+          <td>
+            {% if c.balance > 0 %}<span class="badge badge-danger">Due</span>
+            {% elif c.balance < 0 %}<span class="badge badge-info">Advance</span>
+            {% else %}<span class="badge badge-success">Clear</span>{% endif %}
+          </td>
+          <td>
+            <div class="btn-group">
+              <a href="{{ url_for('client_detail', client_id=c.id, year=year) }}" class="btn btn-outline btn-sm">View</a>
+              {% if c.is_hidden %}
+                <form method="post" action="{{ url_for('restore_client', client_id=c.id) }}" style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                  <button class="btn btn-ghost btn-sm">👁 Show</button>
+                </form>
+              {% else %}
+                <form method="post" action="{{ url_for('hide_client', client_id=c.id) }}" style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                  <button class="btn btn-ghost btn-sm">🙈 Hide</button>
+                </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  @media(max-width:680px){.d-desktop{display:none!important;}}
+  @media(min-width:681px){.d-mobile{display:none!important;}}
+</style>
+
+<script>
+function filterList(q){
+  q = q.toLowerCase();
+  const duesOnly = document.getElementById('duesOnly').checked;
+  // mobile
+  document.querySelectorAll('#clientList .client-card').forEach(el=>{
+    const name = el.dataset.name.toLowerCase();
+    const id   = el.dataset.id;
+    const bal  = parseFloat(el.dataset.balance);
+    el.style.display = (name.includes(q)||id.includes(q)) && (!duesOnly||bal>0) ? '' : 'none';
+  });
+  // desktop
+  document.querySelectorAll('#clientTable tbody tr').forEach(tr=>{
+    const name = tr.dataset.name.toLowerCase();
+    const id   = tr.dataset.id;
+    const bal  = parseFloat(tr.dataset.balance);
+    tr.style.display = (name.includes(q)||id.includes(q)) && (!duesOnly||bal>0) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

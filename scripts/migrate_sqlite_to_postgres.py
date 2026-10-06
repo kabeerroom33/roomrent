@@ -112,6 +112,14 @@ def main():
                 elif table == 'old_balances':
                     migrate_table(sqlite_conn, pg_conn, table, pk_columns=['client_id', 'year'], replace=args.reset)
 
+        with pg_conn.cursor() as cur:
+            for table in ('clients', 'payments'):
+                cur.execute(
+                    f"SELECT setval(pg_get_serial_sequence('{table}', 'id'), "
+                    f"COALESCE(MAX(id), 1), MAX(id) IS NOT NULL) FROM {table}"
+                )
+        pg_conn.commit()
+
         print('\nMigration complete.')
         print(f'Local SQLite DB: {SQLITE_DB}')
         print(f'Supabase/Postgres: {db_url.split("@", 1)[1] if "@" in db_url else "configured"}')

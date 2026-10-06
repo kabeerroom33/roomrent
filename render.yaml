@@ -4,9 +4,9 @@ services:
     name: roomrent
     env: python
     region: oregon
-    rootDir: rent-app
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    rootDir: .
+    buildCommand: pip install -r rent-app/requirements.txt
+    startCommand: cd rent-app && gunicorn wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     envVars:
       - key: SECRET_KEY
         generateValue: true

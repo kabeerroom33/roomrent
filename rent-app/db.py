@@ -234,7 +234,7 @@ def init_schema():
                         FROM pg_constraint
                         WHERE conrelid = 'old_balances'::regclass AND contype = 'p';
                         IF current_pk IS NOT NULL THEN
-                            EXECUTE format('ALTER TABLE old_balances DROP CONSTRAINT %I', current_pk);
+                            EXECUTE 'ALTER TABLE old_balances DROP CONSTRAINT ' || quote_ident(current_pk);
                         END IF;
                         ALTER TABLE old_balances
                             ADD CONSTRAINT old_balances_pkey PRIMARY KEY (client_id, year);

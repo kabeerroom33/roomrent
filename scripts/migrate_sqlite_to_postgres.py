@@ -14,6 +14,7 @@ from pathlib import Path
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from dotenv import dotenv_values
 
 ROOT = Path(__file__).resolve().parents[1]
 APP_DIR = ROOT / 'rent-app'
@@ -24,7 +25,8 @@ SQLITE_DB = APP_DIR / 'data' / 'rent.db'
 
 
 def get_db_url(cli_value: str | None) -> str:
-    value = cli_value or os.environ.get('DATABASE_URL')
+    local_env = dotenv_values(ROOT / '.env')
+    value = cli_value or os.environ.get('DATABASE_URL') or local_env.get('DATABASE_URL')
     if not value:
         raise SystemExit('DATABASE_URL is missing. Example: postgresql://user:pass@host:5432/dbname')
     return value.replace('postgres://', 'postgresql://', 1)

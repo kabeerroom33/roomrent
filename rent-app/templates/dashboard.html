@@ -8,10 +8,10 @@
     <div class="text-muted">{{ room_name }} — {{ year }}</div>
   </div>
   <div class="btn-group">
-    <a href="?year=2025{% if show_hidden %}&show_hidden=1{% endif %}"
-       class="btn btn-sm {% if year==2025 %}btn-primary{% else %}btn-ghost{% endif %}">2025</a>
-    <a href="?year=2026{% if show_hidden %}&show_hidden=1{% endif %}"
-       class="btn btn-sm {% if year==2026 %}btn-primary{% else %}btn-ghost{% endif %}">2026</a>
+     {% for available_year in years %}
+     <a href="?year={{ available_year }}{% if show_hidden %}&show_hidden=1{% endif %}"
+       class="btn btn-sm {% if year==available_year %}btn-primary{% else %}btn-ghost{% endif %}">{{ available_year }}</a>
+     {% endfor %}
     <a href="?year={{ year }}&show_hidden={% if show_hidden %}0{% else %}1{% endif %}"
        class="btn btn-sm btn-ghost">{% if show_hidden %}👁 Hide Hidden{% else %}👁 Show All{% endif %}</a>
   </div>
@@ -51,6 +51,8 @@
     </label>
     <a href="{{ url_for('dues_report', year=year) }}" class="btn btn-sm btn-danger">⚠ Full Dues</a>
     <a href="{{ url_for('add_client') }}" class="btn btn-sm btn-success">+ Client</a>
+    <a href="{{ url_for('export_excel') }}" class="btn btn-sm btn-outline">⬇ Export Excel</a>
+    <a href="{{ url_for('export_pdf') }}" class="btn btn-sm btn-outline">📄 Export PDF</a>
   </div>
 </div>
 

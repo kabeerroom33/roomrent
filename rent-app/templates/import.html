@@ -21,8 +21,11 @@
     <div class="form-group">
       <label>Year to import</label>
       <select name="year">
-        <option value="2025">2025 — ROOM RENT JAN TO DEC 2025.xlsx</option>
-        <option value="2026" selected>2026 — ROOM RENT JAN TO DEC 2026.xlsx</option>
+        {% for available_year in years %}
+        <option value="{{ available_year }}" {% if available_year==selected_year %}selected{% endif %}>
+          {{ available_year }} — ROOM RENT JAN TO DEC {{ available_year }}.xlsx
+        </option>
+        {% endfor %}
       </select>
     </div>
     <div class="form-group">
@@ -41,7 +44,7 @@
     <li>Importing will <b>delete existing data</b> for that year and re-import fresh from the Excel file.</li>
     <li>Client info (name, mobile, room) from existing records is <b>preserved</b>.</li>
     <li>New clients found in the Excel file will be <b>added automatically</b>.</li>
-    <li>Both 2025 and 2026 files use password: <code>9745437665</code></li>
+    <li>Use the workbook password supplied with the source file.</li>
   </ul>
 </div>
 {% endblock %}

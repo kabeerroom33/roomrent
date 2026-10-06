@@ -2,10 +2,10 @@
 PDF Generator for Room Rent Management App
 Generates payment receipts and full annual statements.
 """
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
 from reportlab.lib.units import cm
-from reportlab.platypus import (SimpleDocTemplate, Table, TableStyle,
+from reportlab.platypus import (LongTable, SimpleDocTemplate, Table, TableStyle,
                                  Paragraph, Spacer, HRFlowable)
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
@@ -37,16 +37,18 @@ def _styles():
         fontSize=9, leading=12, alignment=TA_RIGHT))
     s.add(ParagraphStyle('SmallGray', parent=s['Normal'],
         fontSize=8, textColor=MID_GRAY))
+    s.add(ParagraphStyle('NoteCell', parent=s['Normal'],
+        fontSize=8, leading=10, wordWrap='CJK'))
     s.add(ParagraphStyle('BigAmount', parent=s['Normal'],
         fontSize=15, textColor=PRIMARY, leading=18, alignment=TA_CENTER))
     return s
 
-def _header_block(styles, client, receipt_no, year, month_name=None):
+def _header_block(styles, client, receipt_no, year, month_name=None, room_name='Room 33'):
     """Builds the top header section (logo area + client info)."""
     elements = []
 
     # Title bar
-    title_text = '33 ROOM RENT MANAGEMENT'
+    title_text = f'{room_name.upper()} RENT MANAGEMENT'
     elements.append(Paragraph(title_text, styles['Title2']))
     sub = month_name or str(year)
     elements.append(Paragraph(f'Payment Receipt — {sub} {year}', styles['Subtitle']))
@@ -77,7 +79,7 @@ def _header_block(styles, client, receipt_no, year, month_name=None):
     elements.append(Spacer(1, 0.4*cm))
     return elements
 
-def create_receipt_pdf(data, year, month, month_names):
+def create_receipt_pdf(data, year, month, month_names, room_name='Room 33'):
     """Generate a single-month payment receipt PDF."""
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4,
@@ -91,7 +93,7 @@ def create_receipt_pdf(data, year, month, month_names):
     receipt_no = f"RCT-{client['id']:04d}-{year}-{month.upper()}"
     payment = data['payments'].get(month, {})
 
-    elements += _header_block(styles, client, receipt_no, year, month_name)
+    elements += _header_block(styles, client, receipt_no, year, month_name, room_name)
 
     # ── Payment for this month
     elements.append(Paragraph(f'<b>PAYMENT — {month_name.upper()} {year}</b>', styles['Cell']))
@@ -209,7 +211,7 @@ def create_receipt_pdf(data, year, month, month_names):
     return buffer.getvalue()
 
 
-def create_full_statement_pdf(data, year, months, month_names):
+def create_full_statement_pdf(data, year, months, month_names, room_name='Room 33'):
     """Generate a full annual statement PDF."""
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4,
@@ -221,14 +223,28 @@ def create_full_statement_pdf(data, year, months, month_names):
     client = data['client']
     receipt_no = f"STMT-{client['id']:04d}-{year}"
 
-    elements += _header_block(styles, client, receipt_no, year, 'Annual Statement')
+    elements += _header_block(styles, client, receipt_no, year, 'Annual Statement', room_name)
 
     client_notes = (client.get('notes') or '').strip()
     if client_notes:
         elements.append(Paragraph(
-            f'<b>Client Notes:</b> {escape(client_notes).replace(chr(10), "<br/>")}',
-            styles['Cell']
+            f'<b>Client Notes:</b><br/>{escape(client_notes).replace(chr(10), "<br/>")}',
+            styles['NoteCell']
         ))
+        elements.append(Spacer(1, 0.2*cm))
+
+    payment_notes = [
+        (month_names[month], (data['payments'][month].get('notes') or '').strip())
+        for month in months
+        if data['payments'].get(month) and (data['payments'][month].get('notes') or '').strip()
+    ]
+    if payment_notes:
+        elements.append(Paragraph('<b>PAYMENT NOTES</b>', styles['Cell']))
+        elements.append(Spacer(1, 0.1*cm))
+        for month_name, note in payment_notes:
+            note_html = escape(note).replace('\r\n', '\n').replace('\n', '<br/>')
+            elements.append(Paragraph(f'<b>{escape(month_name)}:</b> {note_html}', styles['NoteCell']))
+            elements.append(Spacer(1, 0.08*cm))
         elements.append(Spacer(1, 0.2*cm))
 
     elements.append(Paragraph(f'<b>COMPLETE PAYMENT RECORD — {year}</b>', styles['Cell']))
@@ -265,7 +281,7 @@ def create_full_statement_pdf(data, year, months, month_names):
             Paragraph(f"AED {p['amount_paid']:.2f}", styles['CellRight']),
             Paragraph(f"AED {p['balance']:.2f}", styles['CellRight']),
             Paragraph(status, styles['Cell']),
-            Paragraph(escape((p.get('notes') or '').strip()).replace('\n', '<br/>'), styles['Cell']),
+            Paragraph(escape((p.get('notes') or '').strip()).replace('\n', '<br/>') or '—', styles['NoteCell']),
         ])
 
     total_bal = data['total_balance']
@@ -313,5 +329,81 @@ def create_full_statement_pdf(data, year, months, month_names):
         styles['SmallGray']
     ))
 
+    doc.build(elements)
+    return buffer.getvalue()
+
+
+def create_export_pdf(clients, payments, old_balances, years, months, month_names, room_name):
+    """Generate a full-data PDF using the sample workbook's monthly layout."""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=landscape(A4),
+        rightMargin=1.2*cm, leftMargin=1.2*cm,
+        topMargin=1.2*cm, bottomMargin=1.2*cm,
+    )
+    styles = _styles()
+    elements = [
+        Paragraph(f'{escape(room_name.upper())} RENT MANAGEMENT', styles['Title2']),
+        Paragraph('Full rent data export', styles['Subtitle']),
+        Spacer(1, 0.25*cm),
+    ]
+    rows = [[Paragraph(f'<b>{header}</b>', styles['Header']) for header in (
+        'YEAR', 'CLIENTS', 'MONTH', 'DUE', 'PAID', 'BALANCE',
+        'TOTAL OUTSTANDING BALANCE', 'NOTES')]]
+    payments_by_key = {
+        (int(payment['client_id']), int(payment['year']), payment['month']): payment
+        for payment in payments
+    }
+    balances_by_key = {
+        (int(balance['client_id']), int(balance['year'])): float(balance.get('amount') or 0)
+        for balance in old_balances
+    }
+
+    for year in years:
+        for client in clients:
+            client_id = int(client['id'])
+            annual_payments = [
+                payments_by_key.get((client_id, year, month), {}) for month in months
+            ]
+            total_outstanding = balances_by_key.get((client_id, year), 0) + sum(
+                float(payment.get('balance') or 0) for payment in annual_payments)
+            for index, month in enumerate(months):
+                payment = annual_payments[index]
+                note_parts = []
+                if index == 0 and (client.get('notes') or '').strip():
+                    note_parts.append(f"Client: {(client.get('notes') or '').strip()}")
+                if (payment.get('notes') or '').strip():
+                    note_parts.append(f"Payment: {payment['notes'].strip()}")
+                note_text = '<br/>'.join(escape(note) for note in note_parts) or '—'
+                rows.append([
+                    Paragraph(str(year) if index == 0 else '', styles['Cell']),
+                    Paragraph(escape(client['name']) if index == 0 else '', styles['Cell']),
+                    Paragraph(escape(month_names[month].upper()), styles['Cell']),
+                    Paragraph(f"AED {float(payment.get('amount_due') or 0):,.2f}", styles['CellRight']),
+                    Paragraph(f"AED {float(payment.get('amount_paid') or 0):,.2f}", styles['CellRight']),
+                    Paragraph(f"AED {float(payment.get('balance') or 0):,.2f}", styles['CellRight']),
+                    Paragraph(f"AED {total_outstanding:,.2f}" if index == 0 else '', styles['CellRight']),
+                    Paragraph(note_text, styles['NoteCell']),
+                ])
+
+    table = LongTable(
+        rows,
+        colWidths=[1.3*cm, 4.4*cm, 2.3*cm, 2.3*cm, 2.3*cm, 2.5*cm, 3.5*cm, 7.5*cm],
+        repeatRows=1,
+        splitByRow=1,
+    )
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), PRIMARY),
+        ('TEXTCOLOR', (0, 0), (-1, 0), WHITE),
+        ('GRID', (0, 0), (-1, -1), 0.35, colors.HexColor('#d1d5db')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [WHITE, LIGHT_GRAY]),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('ALIGN', (3, 1), (6, -1), 'RIGHT'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    elements.append(table)
     doc.build(elements)
     return buffer.getvalue()

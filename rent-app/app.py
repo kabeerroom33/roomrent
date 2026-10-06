@@ -86,7 +86,16 @@ def _month_order_sql(backend='sq'):
             "WHEN 'jul' THEN 7 WHEN 'aug' THEN 8 WHEN 'sep' THEN 9 "
             "WHEN 'oct' THEN 10 WHEN 'nov' THEN 11 WHEN 'dec' THEN 12 END")
 
-def get_client_full(client_id, year=2025):
+def get_available_years():
+    years = {datetime.now().year}
+    with get_db() as conn:
+        conn.execute('SELECT year FROM payments UNION SELECT year FROM old_balances')
+        years.update(int(row['year']) for row in conn.fetchall())
+    return sorted(years, reverse=True)
+
+def get_client_full(client_id, year=None):
+    if year is None:
+        year = datetime.now().year
     with get_db() as conn:
         conn.execute("SELECT * FROM clients WHERE id=?", (client_id,))
         client = conn.fetchone()
@@ -121,6 +130,7 @@ def get_client_full(client_id, year=2025):
 @app.route('/')
 def dashboard():
     year = int(request.args.get('year', datetime.now().year))
+    years = get_available_years()
     show_hidden = request.args.get('show_hidden') == '1'
 
     with get_db() as conn:
@@ -165,17 +175,19 @@ def dashboard():
         total_due=total_due_all, total_paid=total_paid_all,
         total_balance=total_balance_all,
         show_hidden=show_hidden,
+        years=years,
     )
 
 # ─── Client detail ─────────────────────────────────────────────────────────────
 @app.route('/client/<int:client_id>')
 def client_detail(client_id):
     year = int(request.args.get('year', datetime.now().year))
+    years = get_available_years()
     data = get_client_full(client_id, year)
     if not data:
         flash('Client not found', 'error')
         return redirect(url_for('dashboard'))
-    return render_template('client_detail.html', data=data, year=year)
+    return render_template('client_detail.html', data=data, year=year, years=years)
 
 # ─── Add client ────────────────────────────────────────────────────────────────
 @app.route('/client/add', methods=['GET', 'POST'])
@@ -289,6 +301,40 @@ def record_payment():
     flash(f'Payment of AED {paid:.0f} recorded for {MONTH_NAMES[month]} {year}', 'success')
     return redirect(url_for('client_detail', client_id=client_id, year=year))
 
+@app.route('/payment/<int:payment_id>/edit', methods=['POST'])
+def edit_payment(payment_id):
+    due = float(request.form.get('amount_due', 0))
+    paid = float(request.form.get('amount_paid', 0))
+    paid_date = request.form.get('paid_date', '') or None
+    payment_method = request.form.get('payment_method', 'cash')
+    notes = request.form.get('notes', '').strip()
+
+    with get_db() as conn:
+        conn.execute('SELECT client_id, year, month FROM payments WHERE id=?', (payment_id,))
+        payment = conn.fetchone()
+        if not payment:
+            flash('Payment entry not found', 'error')
+            return redirect(url_for('dashboard'))
+        conn.execute(
+            "UPDATE payments SET amount_due=?, amount_paid=?, balance=?, paid_date=?, payment_method=?, notes=? WHERE id=?",
+            (due, paid, due - paid, paid_date, payment_method, notes, payment_id))
+
+    flash(f'{MONTH_NAMES[payment["month"]]} {payment["year"]} payment updated', 'success')
+    return redirect(url_for('client_detail', client_id=payment['client_id'], year=payment['year']))
+
+@app.route('/payment/<int:payment_id>/delete', methods=['POST'])
+def delete_payment(payment_id):
+    with get_db() as conn:
+        conn.execute('SELECT client_id, year, month FROM payments WHERE id=?', (payment_id,))
+        payment = conn.fetchone()
+        if not payment:
+            flash('Payment entry not found', 'error')
+            return redirect(url_for('dashboard'))
+        conn.execute('DELETE FROM payments WHERE id=?', (payment_id,))
+
+    flash(f'{MONTH_NAMES[payment["month"]]} {payment["year"]} payment entry deleted', 'success')
+    return redirect(url_for('client_detail', client_id=payment['client_id'], year=payment['year']))
+
 # ─── Search ────────────────────────────────────────────────────────────────────
 @app.route('/search')
 def search():
@@ -307,10 +353,61 @@ def search():
             results = [dict(r) for r in conn.fetchall()]
     return render_template('search.html', results=results, query=q)
 
+# ─── Monthly payments report ───────────────────────────────────────────────────
+@app.route('/reports/monthly-payments')
+def monthly_payments_report():
+    year = int(request.args.get('year', datetime.now().year))
+    years = get_available_years()
+
+    with get_db() as conn:
+        conn.execute("SELECT * FROM clients WHERE active=1 AND is_hidden=0 ORDER BY id")
+        clients = conn.fetchall()
+
+    monthly_totals = {month: 0.0 for month in MONTHS}
+    report_rows = []
+
+    for client in clients:
+        monthly_amounts = {}
+        total = 0.0
+        for month in MONTHS:
+            with get_db() as conn:
+                conn.execute(
+                    "SELECT COALESCE(SUM(amount_paid), 0) AS paid FROM payments WHERE client_id=? AND year=? AND month=?",
+                    (client['id'], year, month)
+                )
+                payment = conn.fetchone()
+            amount = float(payment['paid']) if payment else 0.0
+            monthly_amounts[month] = amount
+            total += amount
+            monthly_totals[month] += amount
+
+        report_rows.append({
+            'id': client['id'],
+            'name': client['name'],
+            'room_no': client['room_no'],
+            'mobile': client['mobile'],
+            'months': monthly_amounts,
+            'total': total,
+        })
+
+    report_rows.sort(key=lambda row: row['total'], reverse=True)
+    total_collected = sum(monthly_totals.values())
+
+    return render_template(
+        'monthly_payments_report.html',
+        rows=report_rows,
+        year=year,
+        years=years,
+        months=MONTHS,
+        monthly_totals=monthly_totals,
+        total_collected=total_collected,
+    )
+
 # ─── Dues report ───────────────────────────────────────────────────────────────
 @app.route('/dues')
 def dues_report():
     year = int(request.args.get('year', datetime.now().year))
+    years = get_available_years()
     with get_db() as conn:
         conn.execute("SELECT * FROM clients WHERE active=1 AND is_hidden=0 ORDER BY id")
         clients = conn.fetchall()
@@ -331,7 +428,7 @@ def dues_report():
                          'mobile': c['mobile'], 'balance': bal})
     dues.sort(key=lambda x: x['balance'], reverse=True)
     return render_template('dues.html', dues=dues, year=year,
-                           total=sum(d['balance'] for d in dues))
+                           total=sum(d['balance'] for d in dues), years=years)
 
 # ─── PDF Receipt ───────────────────────────────────────────────────────────────
 @app.route('/client/<int:client_id>/receipt/<int:year>/<month>')
@@ -364,15 +461,18 @@ def generate_full_statement(client_id, year):
 def import_excel():
     """Import or re-import data from Excel files."""
     message = None
+    years = get_available_years()
+    selected_year = datetime.now().year
     if request.method == 'POST':
-        year = int(request.form.get('year', 2026))
+        year = int(request.form.get('year', datetime.now().year))
+        selected_year = year
         password = request.form.get('password', '9745437665')
         try:
             count = _do_import(year, password)
             message = ('success', f'✅ Imported {count} payment records for {year}')
         except Exception as e:
             message = ('error', f'Error: {e}')
-    return render_template('import.html', message=message)
+    return render_template('import.html', message=message, years=years, selected_year=selected_year)
 
 def _do_import(year, password='9745437665'):
     import msoffcrypto, openpyxl
@@ -456,10 +556,149 @@ def _do_import(year, password='9745437665'):
 # ─── Backup / export ───────────────────────────────────────────────────────────
 @app.route('/admin/backup')
 def backup():
+    return redirect(url_for('dashboard'))
+
+def _collect_export_data():
     with get_db() as conn:
-        conn.execute("SELECT * FROM clients ORDER BY id")
-        clients = conn.fetchall()
-    return render_template('backup.html', clients=clients)
+        conn.execute('SELECT * FROM clients ORDER BY id')
+        clients = [dict(row) for row in conn.fetchall()]
+        conn.execute(
+            "SELECT p.*, c.name FROM payments p JOIN clients c ON c.id=p.client_id "
+            "ORDER BY p.year, c.id, CASE p.month "
+            "WHEN 'jan' THEN 1 WHEN 'feb' THEN 2 WHEN 'mar' THEN 3 "
+            "WHEN 'apr' THEN 4 WHEN 'may' THEN 5 WHEN 'jun' THEN 6 "
+            "WHEN 'jul' THEN 7 WHEN 'aug' THEN 8 WHEN 'sep' THEN 9 "
+            "WHEN 'oct' THEN 10 WHEN 'nov' THEN 11 WHEN 'dec' THEN 12 END")
+        payments = [dict(row) for row in conn.fetchall()]
+        conn.execute('SELECT * FROM old_balances ORDER BY year, client_id')
+        old_balances = [dict(row) for row in conn.fetchall()]
+
+    years = {datetime.now().year}
+    years.update(int(payment['year']) for payment in payments)
+    years.update(int(balance['year']) for balance in old_balances)
+    return clients, payments, old_balances, sorted(years)
+
+@app.route('/admin/export/excel')
+def export_excel():
+    from openpyxl import Workbook, load_workbook
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+
+    clients, payments, old_balances, years = _collect_export_data()
+    template_path = os.path.join(os.path.dirname(__file__), '..', 'sample.xlsx')
+    if os.path.exists(template_path):
+        workbook = load_workbook(template_path)
+        report = workbook.active
+        report.delete_rows(1, report.max_row)
+    else:
+        workbook = Workbook()
+        report = workbook.active
+    report.title = 'Rent Report'
+    headers = ('YEAR', 'CLIENTS', 'MONTH', 'DUE', 'PAID', 'BALANCE',
+               'TOTAL OUTSTANDING BALANCE', 'NOTES')
+    report.append(headers)
+
+    month_index = {month: index for index, month in enumerate(MONTHS)}
+    payments_by_key = {
+        (int(payment['client_id']), int(payment['year']), payment['month']): payment
+        for payment in payments
+    }
+    balances_by_key = {
+        (int(balance['client_id']), int(balance['year'])): float(balance['amount'] or 0)
+        for balance in old_balances
+    }
+    header_fill = PatternFill('solid', fgColor='1A3C6E')
+    header_font = Font(color='FFFFFF', bold=True)
+    border_side = Side(style='thin', color='D9E2F2')
+    currency_format = '#,##0.00;[Red]-#,##0.00;–'
+
+    for year in years:
+        for client in clients:
+            client_id = int(client['id'])
+            annual_payments = [
+                payments_by_key.get((client_id, year, month), {}) for month in MONTHS
+            ]
+            total_outstanding = balances_by_key.get((client_id, year), 0) + sum(
+                float(payment.get('balance') or 0) for payment in annual_payments)
+            first_row = report.max_row + 1
+            for index, month in enumerate(MONTHS):
+                payment = annual_payments[index]
+                report.append((
+                    year if index == 0 else None,
+                    client['name'] if index == 0 else None,
+                    MONTH_NAMES[month].upper(),
+                    float(payment.get('amount_due') or 0),
+                    float(payment.get('amount_paid') or 0),
+                    float(payment.get('balance') or 0),
+                    total_outstanding if index == 0 else None,
+                    payment.get('notes') or '',
+                ))
+            last_row = report.max_row
+            for column in (1, 2, 7):
+                report.merge_cells(start_row=first_row, start_column=column,
+                                   end_row=last_row, end_column=column)
+
+    for cell in report[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        cell.border = Border(bottom=Side(style='medium', color='F59E0B'))
+    report.row_dimensions[1].height = 32
+    for row in report.iter_rows(min_row=2, min_col=1, max_col=8):
+        for cell in row:
+            cell.border = Border(bottom=border_side)
+            cell.alignment = Alignment(vertical='top', wrap_text=(cell.column in (2, 8)))
+            if cell.column in (4, 5, 6, 7):
+                cell.number_format = currency_format
+    for column, width in {'A': 10, 'B': 34, 'C': 16, 'D': 14, 'E': 14,
+                          'F': 14, 'G': 23, 'H': 42}.items():
+        report.column_dimensions[column].width = width
+    report.freeze_panes = 'A2'
+    report.sheet_view.showGridLines = False
+
+    client_sheet = workbook.create_sheet('Clients')
+    client_sheet.append(('ID', 'Name', 'Mobile', 'Room', 'Monthly Rent', 'Active', 'Hidden', 'Client Notes'))
+    for client in clients:
+        client_sheet.append((client['id'], client['name'], client['mobile'], client['room_no'],
+                             client['monthly_rent'], client['active'], client['is_hidden'], client['notes']))
+    payment_sheet = workbook.create_sheet('Transactions')
+    payment_sheet.append(('Payment ID', 'Client ID', 'Client', 'Year', 'Month', 'Due', 'Paid',
+                          'Balance', 'Paid Date', 'Method', 'Notes'))
+    for payment in payments:
+        payment_sheet.append((payment['id'], payment['client_id'], payment['name'], payment['year'],
+                              MONTH_NAMES[payment['month']], payment['amount_due'], payment['amount_paid'],
+                              payment['balance'], payment['paid_date'], payment['payment_method'], payment['notes']))
+    balance_sheet = workbook.create_sheet('Opening Balances')
+    balance_sheet.append(('Client ID', 'Client', 'Year', 'Opening Balance'))
+    client_names = {int(client['id']): client['name'] for client in clients}
+    for balance in old_balances:
+        balance_sheet.append((balance['client_id'], client_names.get(int(balance['client_id']), ''),
+                              balance['year'], balance['amount']))
+
+    for sheet in (client_sheet, payment_sheet, balance_sheet):
+        sheet.freeze_panes = 'A2'
+        sheet.auto_filter.ref = sheet.dimensions
+        sheet.sheet_view.showGridLines = False
+        for cell in sheet[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(wrap_text=True, vertical='center')
+        for cells in sheet.columns:
+            width = min(max(max(len(str(cell.value or '')) for cell in cells) + 2, 12), 42)
+            sheet.column_dimensions[cells[0].column_letter].width = width
+
+    output = io.BytesIO()
+    workbook.save(output)
+    output.seek(0)
+    return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                     as_attachment=True, download_name='sample.xlsx')
+
+@app.route('/admin/export/pdf')
+def export_pdf():
+    from pdf_generator import create_export_pdf
+    clients, payments, old_balances, years = _collect_export_data()
+    report = create_export_pdf(clients, payments, old_balances, years, MONTHS, MONTH_NAMES, ROOM_NAME)
+    return send_file(io.BytesIO(report), mimetype='application/pdf', as_attachment=True,
+                     download_name='rent-data-report.pdf')
 
 # ─── Startup ───────────────────────────────────────────────────────────────────
 def create_app():

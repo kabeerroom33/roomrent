@@ -2,275 +2,279 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
-  <meta name="theme-color" content="#1a3c6e"/>
-  <meta name="mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>{% block title %}{{ room_name }} Rent Manager{% endblock %}</title>
   <style>
-    /* ── Reset & Variables ── */
-    :root{
-      --primary:#1a3c6e; --secondary:#2563eb; --accent:#f59e0b;
-      --success:#16a34a; --danger:#dc2626; --warning:#d97706;
-      --light:#f3f4f6; --border:#e5e7eb; --text:#1f2937; --muted:#6b7280;
-      --radius:12px; --shadow:0 2px 8px rgba(0,0,0,.10);
+    :root {
+      --primary: #1a3c6e;
+      --secondary: #2563eb;
+      --accent: #f59e0b;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --light: #f3f4f6;
+      --border: #e5e7eb;
+      --text: #1f2937;
+      --muted: #6b7280;
     }
-    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-    html{font-size:16px;}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-         background:#f0f4f8;color:var(--text);min-height:100vh;padding-bottom:80px;}
-
-    /* ── Top Nav ── */
-    .topnav{
-      background:var(--primary);color:#fff;
-      display:flex;align-items:center;gap:.5rem;
-      padding:.75rem 1rem;position:sticky;top:0;z-index:200;
-      box-shadow:0 2px 8px rgba(0,0,0,.3);
-    }
-    .topnav .brand{font-size:1rem;font-weight:800;flex:1;letter-spacing:.3px;}
-    .topnav .brand span{color:var(--accent);}
-    .topnav a.nav-icon{
-      color:rgba(255,255,255,.85);text-decoration:none;
-      padding:.45rem .65rem;border-radius:8px;font-size:.8rem;
-      white-space:nowrap;transition:background .2s;
-    }
-    .topnav a.nav-icon:hover{background:rgba(255,255,255,.15);}
-
-    /* ── Search bar ── */
-    .search-wrap{
-      background:var(--primary);padding:.5rem 1rem .75rem;
-      position:sticky;top:52px;z-index:190;
-    }
-    .search-wrap form{display:flex;gap:.4rem;}
-    .search-wrap input{
-      flex:1;border:none;border-radius:8px;padding:.5rem .9rem;
-      font-size:.9rem;background:rgba(255,255,255,.15);color:#fff;outline:none;
-      -webkit-appearance:none;
-    }
-    .search-wrap input::placeholder{color:rgba(255,255,255,.55);}
-    .search-wrap input:focus{background:#fff;color:var(--text);}
-    .search-wrap button{
-      background:var(--accent);border:none;color:#fff;
-      padding:.5rem .9rem;border-radius:8px;font-weight:700;
-      font-size:.85rem;cursor:pointer;white-space:nowrap;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      color: var(--text);
+      min-height: 100vh;
     }
 
-    /* ── Bottom Nav (mobile) ── */
-    .bottom-nav{
-      display:none;
-      position:fixed;bottom:0;left:0;right:0;
-      background:#fff;border-top:1px solid var(--border);
-      z-index:300;padding:.5rem 0;
+    /* ── NAV ── */
+    .topnav {
+      background: var(--primary);
+      color: white;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      height: 56px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
     }
-    .bottom-nav ul{display:flex;list-style:none;justify-content:space-around;}
-    .bottom-nav a{
-      display:flex;flex-direction:column;align-items:center;
-      text-decoration:none;color:var(--muted);font-size:.65rem;font-weight:600;
-      padding:.3rem .5rem;border-radius:8px;transition:color .2s;gap:2px;
-    }
-    .bottom-nav a .icon{font-size:1.3rem;line-height:1;}
-    .bottom-nav a.active,.bottom-nav a:hover{color:var(--secondary);}
-    @media(max-width:680px){
-      .bottom-nav{display:block;}
-      .topnav .nav-desktop{display:none;}
-      body{padding-bottom:70px;}
-    }
+    .topnav .brand { font-size: 1.1rem; font-weight: 700; letter-spacing: .5px; flex: 1; }
+    .topnav .brand span { color: var(--accent); }
+    .topnav a { color: rgba(255,255,255,.85); text-decoration: none; font-size: .9rem;
+             padding: .4rem .8rem; border-radius: 6px; transition: background .2s; }
+    .topnav a:hover { background: rgba(255,255,255,.15); }
 
-    /* ── Main container ── */
-    main{max-width:1100px;margin:0 auto;padding:1rem;}
-
-    /* ── Flash messages ── */
-    .flash{
-      padding:.75rem 1rem;border-radius:var(--radius);margin-bottom:.75rem;
-      font-weight:500;font-size:.9rem;display:flex;align-items:center;gap:.5rem;
+    /* ── SEARCH BAR ── */
+    .search-bar { display: flex; gap: .5rem; margin-left: auto; }
+    .search-bar input {
+      border: none; border-radius: 8px; padding: .4rem .9rem;
+      font-size: .9rem; width: 220px; outline: none;
+      background: rgba(255,255,255,.15); color: white;
     }
-    .flash-success{background:#dcfce7;color:var(--success);border-left:4px solid var(--success);}
-    .flash-error  {background:#fee2e2;color:var(--danger); border-left:4px solid var(--danger);}
-
-    /* ── Cards ── */
-    .card{
-      background:#fff;border-radius:var(--radius);
-      box-shadow:var(--shadow);padding:1rem;margin-bottom:1rem;
-    }
-    .card-title{
-      font-size:.95rem;font-weight:700;color:var(--primary);
-      margin-bottom:.9rem;display:flex;align-items:center;gap:.5rem;
+    .search-bar input::placeholder { color: rgba(255,255,255,.6); }
+    .search-bar input:focus { background: white; color: var(--text); }
+    .search-bar button {
+      background: var(--accent); border: none; color: white;
+      padding: .4rem .9rem; border-radius: 8px; cursor: pointer;
+      font-weight: 600; font-size: .85rem;
     }
 
-    /* ── Stats grid ── */
-    .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;margin-bottom:1rem;}
-    @media(min-width:600px){.stats{grid-template-columns:repeat(4,1fr);}}
-    .stat{
-      background:#fff;border-radius:var(--radius);padding:1rem;
-      box-shadow:var(--shadow);text-align:center;
-      border-top:4px solid var(--secondary);
+    /* ── LAYOUT ── */
+    main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+
+    /* ── CARDS ── */
+    .card {
+      background: white; border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 1.25rem;
+      margin-bottom: 1rem;
     }
-    .stat.danger {border-top-color:var(--danger);}
-    .stat.success{border-top-color:var(--success);}
-    .stat.accent {border-top-color:var(--accent);}
-    .stat-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;
-                color:var(--muted);margin-bottom:.2rem;}
-    .stat-value{font-size:1.4rem;font-weight:800;color:var(--primary);}
-    .stat.danger .stat-value{color:var(--danger);}
-    .stat.success .stat-value{color:var(--success);}
-
-    /* ── Table ── */
-    .table-wrap{overflow-x:auto;border-radius:10px;-webkit-overflow-scrolling:touch;}
-    table{width:100%;border-collapse:collapse;font-size:.85rem;}
-    thead{background:var(--primary);color:#fff;}
-    th{padding:.65rem .8rem;text-align:left;font-weight:600;white-space:nowrap;}
-    td{padding:.6rem .8rem;border-bottom:1px solid var(--border);vertical-align:middle;}
-    tr:last-child td{border-bottom:none;}
-    tbody tr:hover{background:var(--light);}
-    .text-right{text-align:right;}
-
-    /* ── Buttons ── */
-    .btn{
-      display:inline-flex;align-items:center;justify-content:center;gap:.35rem;
-      padding:.5rem 1rem;border-radius:8px;font-size:.85rem;font-weight:600;
-      cursor:pointer;border:none;text-decoration:none;
-      transition:opacity .15s,transform .1s;white-space:nowrap;
-      min-height:40px;
-    }
-    .btn:active{opacity:.8;transform:scale(.97);}
-    .btn-primary {background:var(--secondary);color:#fff;}
-    .btn-success {background:var(--success);color:#fff;}
-    .btn-danger  {background:var(--danger);color:#fff;}
-    .btn-accent  {background:var(--accent);color:#fff;}
-    .btn-wa      {background:#25D366;color:#fff;}
-    .btn-outline {background:transparent;border:1.5px solid var(--secondary);color:var(--secondary);}
-    .btn-ghost   {background:transparent;border:1.5px solid var(--border);color:var(--muted);}
-    .btn-sm      {padding:.3rem .65rem;font-size:.78rem;min-height:32px;}
-    .btn-lg      {padding:.75rem 1.5rem;font-size:1rem;}
-    .btn-block   {width:100%;}
-    .btn-group   {display:flex;gap:.5rem;flex-wrap:wrap;}
-
-    /* ── Badges ── */
-    .badge{display:inline-block;padding:.2rem .6rem;border-radius:999px;
-           font-size:.72rem;font-weight:600;}
-    .badge-success{background:#dcfce7;color:var(--success);}
-    .badge-danger {background:#fee2e2;color:var(--danger);}
-    .badge-warning{background:#fef3c7;color:var(--warning);}
-    .badge-info   {background:#dbeafe;color:var(--secondary);}
-    .badge-gray   {background:#f3f4f6;color:var(--muted);}
-
-    /* ── Forms ── */
-    .form-group{margin-bottom:.9rem;}
-    .form-group label{display:block;font-size:.83rem;font-weight:600;margin-bottom:.3rem;}
-    .form-group input,.form-group select,.form-group textarea{
-      width:100%;padding:.55rem .85rem;border:1.5px solid var(--border);
-      border-radius:8px;font-size:1rem;outline:none;
-      transition:border-color .2s;-webkit-appearance:none;
-      background:#fff;
-    }
-    .form-group input:focus,.form-group select:focus{border-color:var(--secondary);}
-    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
-    @media(max-width:400px){.form-row{grid-template-columns:1fr;}}
-
-    /* ── Month cards ── */
-    .months-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;}
-    @media(min-width:520px){.months-grid{grid-template-columns:repeat(4,1fr);}}
-    @media(min-width:768px){.months-grid{grid-template-columns:repeat(6,1fr);}}
-    .month-card{
-      border:1.5px solid var(--border);border-radius:10px;padding:.7rem .5rem;
-      text-align:center;cursor:pointer;transition:all .2s;
-    }
-    .month-card:active{transform:scale(.96);}
-    .month-card.paid   {border-color:var(--success);background:#f0fdf4;}
-    .month-card.partial{border-color:var(--warning);background:#fffbeb;}
-    .month-card.unpaid {border-color:var(--danger);background:#fef2f2;}
-    .month-card .m-name{font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted);}
-    .month-card .m-amt {font-size:.95rem;font-weight:800;margin:.2rem 0;}
-    .month-card.paid    .m-amt{color:var(--success);}
-    .month-card.partial .m-amt{color:var(--warning);}
-    .month-card.unpaid  .m-amt{color:var(--danger);}
-    .month-card .m-bal {font-size:.67rem;}
-
-    /* ── Modal ── */
-    .modal-overlay{
-      display:none;position:fixed;inset:0;
-      background:rgba(0,0,0,.55);z-index:500;
-      align-items:flex-end;justify-content:center;
-    }
-    @media(min-width:500px){.modal-overlay{align-items:center;}}
-    .modal-overlay.open{display:flex;}
-    .modal{
-      background:#fff;width:100%;max-width:460px;
-      border-radius:20px 20px 0 0;padding:1.5rem 1.25rem 2rem;
-      box-shadow:0 -4px 40px rgba(0,0,0,.2);
-      animation:slideUp .25s ease;
-    }
-    @media(min-width:500px){.modal{border-radius:16px;}}
-    @keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
-    .modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;
-                  margin:0 auto 1rem;}
-    .modal-title{font-size:1.1rem;font-weight:700;color:var(--primary);margin-bottom:1.2rem;}
-    .modal-actions{display:flex;gap:.75rem;margin-top:1.25rem;}
-
-    /* ── Page header ── */
-    .page-header{
-      display:flex;align-items:flex-start;justify-content:space-between;
-      margin-bottom:1rem;gap:.75rem;flex-wrap:wrap;
-    }
-    .page-title{font-size:1.25rem;font-weight:800;color:var(--primary);}
-    .text-muted{color:var(--muted);font-size:.83rem;}
-    .amount-pos{color:var(--danger);font-weight:700;}
-    .amount-ok {color:var(--success);font-weight:700;}
-
-    /* ── ID chip ── */
-    .id-chip{
-      display:inline-flex;align-items:center;justify-content:center;
-      width:34px;height:34px;border-radius:50%;
-      background:var(--secondary);color:#fff;
-      font-weight:800;font-size:.8rem;flex-shrink:0;
+    .card-title {
+      font-size: 1rem; font-weight: 700; color: var(--primary);
+      margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem;
     }
 
-    /* ── Client row card (mobile list) ── */
-    .client-card{
-      display:flex;align-items:center;gap:.75rem;
-      padding:.8rem;border-bottom:1px solid var(--border);
-      text-decoration:none;color:inherit;
+    /* ── STAT BOXES ── */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .client-summary-stats { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .stat {
+      background: white; border-radius: 12px; padding: 1.2rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08); text-align: center;
+      border-top: 4px solid var(--secondary);
     }
-    .client-card:last-child{border-bottom:none;}
-    .client-card:active{background:var(--light);}
-    .client-card .c-info{flex:1;min-width:0;}
-    .client-card .c-name{font-weight:600;font-size:.92rem;white-space:nowrap;
-                         overflow:hidden;text-overflow:ellipsis;}
-    .client-card .c-sub {font-size:.75rem;color:var(--muted);}
-    .client-card .c-bal {text-align:right;flex-shrink:0;}
+    .stat.danger { border-top-color: var(--danger); }
+    .stat.success { border-top-color: var(--success); }
+    .stat.accent { border-top-color: var(--accent); }
+    .stat-label { font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: .3rem; }
+    .stat-value { font-size: 1.7rem; font-weight: 800; color: var(--primary); }
+    .stat.danger .stat-value { color: var(--danger); }
+    .stat.success .stat-value { color: var(--success); }
 
-    /* ── Confirm dialog ── */
-    .confirm-modal .modal{max-width:360px;}
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; border-radius: 10px; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    thead { background: var(--primary); color: white; }
+    th { padding: .75rem .9rem; text-align: left; font-weight: 600; white-space: nowrap; }
+    td { padding: .65rem .9rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--light); }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
 
-    /* ── Utils ── */
-    .mt-1{margin-top:.5rem;}.mt-2{margin-top:1rem;}
-    .hidden-tag{opacity:.55;}
-    input[type=hidden]{display:none!important;}
+    /* ── BADGES ── */
+    .badge {
+      display: inline-block; padding: .2rem .6rem; border-radius: 999px;
+      font-size: .75rem; font-weight: 600;
+    }
+    .badge-success { background: #dcfce7; color: var(--success); }
+    .badge-danger  { background: #fee2e2; color: var(--danger); }
+    .badge-warning { background: #fef3c7; color: var(--warning); }
+    .badge-info    { background: #dbeafe; color: var(--secondary); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .45rem 1rem; border-radius: 8px; font-size: .85rem;
+      font-weight: 600; cursor: pointer; border: none; text-decoration: none;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:hover { opacity: .88; transform: translateY(-1px); }
+    .btn-primary  { background: var(--secondary); color: white; }
+    .btn-success  { background: var(--success); color: white; }
+    .btn-danger   { background: var(--danger); color: white; }
+    .btn-accent   { background: var(--accent); color: white; }
+    .btn-wa       { background: #25D366; color: white; }
+    .btn-outline  { background: transparent; border: 1.5px solid var(--secondary); color: var(--secondary); }
+    .btn-ghost    { background: transparent; border: 1.5px solid var(--border); color: var(--muted); }
+    .btn-sm { padding: .3rem .7rem; font-size: .8rem; }
+    .btn-group { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: .35rem; color: var(--text); }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: .55rem .9rem; border: 1.5px solid var(--border);
+      border-radius: 8px; font-size: .9rem; outline: none;
+      transition: border-color .2s; background: white;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--secondary); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    /* ── FLASH ── */
+    .flash { padding: .8rem 1.2rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 500; }
+    .flash-success { background: #dcfce7; color: var(--success); border-left: 4px solid var(--success); }
+    .flash-error   { background: #fee2e2; color: var(--danger); border-left: 4px solid var(--danger); }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.5); z-index: 1000;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: white; border-radius: 16px; padding: 2rem;
+      width: min(480px, 95vw); box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    }
+    .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 1.2rem; }
+    .modal-actions { display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1.5rem; }
+
+    /* ── ID BADGE ── */
+    .id-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--secondary); color: white;
+      font-weight: 800; font-size: .9rem;
+    }
+
+    /* ── MONTHS GRID ── */
+    .months-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: .75rem; }
+    .month-card {
+      border: 1.5px solid var(--border); border-radius: 10px; padding: .9rem;
+      text-align: center; cursor: pointer; transition: all .2s;
+    }
+    .month-card:hover { border-color: var(--secondary); box-shadow: 0 2px 8px rgba(37,99,235,.15); }
+    .month-card.paid    { border-color: var(--success); background: #f0fdf4; }
+    .month-card.partial { border-color: var(--warning); background: #fffbeb; }
+    .month-card.unpaid  { border-color: var(--danger);  background: #fef2f2; }
+    .month-card .month-name { font-size: .8rem; font-weight: 700; text-transform: uppercase; color: var(--muted); }
+    .month-card .month-amount { font-size: 1.1rem; font-weight: 800; margin: .3rem 0; }
+    .month-card.paid    .month-amount { color: var(--success); }
+    .month-card.partial .month-amount { color: var(--warning); }
+    .month-card.unpaid  .month-amount { color: var(--danger); }
+    .month-card .m-name { font-size: .8rem; font-weight: 700; text-transform: uppercase; color: var(--muted); }
+    .month-card .m-amt { font-size: 1.1rem; font-weight: 800; margin: .3rem 0; }
+    .month-card.paid .m-amt { color: var(--success); }
+    .month-card.partial .m-amt { color: var(--warning); }
+    .month-card.unpaid .m-amt { color: var(--danger); }
+    .month-card .m-bal { font-size: .75rem; }
+
+    /* ── UTILS ── */
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: .75rem; }
+    .page-title { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
+    .amount-positive { color: var(--danger); font-weight: 700; }
+    .amount-zero { color: var(--success); font-weight: 700; }
+    .text-muted { color: var(--muted); font-size: .85rem; }
+    .hidden-row { opacity: .55; }
+    .amount-pos { color: var(--danger); font-weight: 700; }
+    .amount-ok { color: var(--success); font-weight: 700; }
+    .hidden-tag { opacity: .55; }
+    .id-chip {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--secondary); color: white; font-weight: 800; font-size: .9rem;
+    }
+    .client-card {
+      display: flex; align-items: center; gap: .75rem; padding: .8rem;
+      border-bottom: 1px solid var(--border); text-decoration: none; color: inherit;
+    }
+    .client-card:last-child { border-bottom: none; }
+    .client-card:active { background: var(--light); }
+    .client-card .c-info { flex: 1; min-width: 0; }
+    .client-card .c-name {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-size: .92rem; font-weight: 600;
+    }
+    .client-card .c-sub { color: var(--muted); font-size: .75rem; }
+    .client-card .c-bal { flex-shrink: 0; text-align: right; }
+
+    .bottom-nav {
+      display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0;
+      height: auto; background: white; border-top: 1px solid var(--border); z-index: 300;
+      padding: .5rem 0 calc(.5rem + env(safe-area-inset-bottom));
+    }
+    .bottom-nav ul { display: flex; list-style: none; justify-content: space-around; }
+    .bottom-nav a {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: .3rem .5rem; border-radius: 8px; text-decoration: none;
+      color: var(--muted); font-size: .65rem; font-weight: 600;
+    }
+    .bottom-nav a .icon { font-size: 1.3rem; line-height: 1; }
+    .bottom-nav a.active, .bottom-nav a:hover { color: var(--secondary); }
+
+    @media(max-width: 640px) {
+      .topnav { flex-wrap: wrap; height: auto; padding: .75rem; gap: .5rem; }
+      .search-bar { order: 3; width: 100%; }
+      .search-bar input { width: 100%; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+    @media(max-width: 680px) {
+      .bottom-nav { display: block; }
+      .topnav .nav-desktop { display: none; }
+      body { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
+      main { padding: 1rem; }
+      .stats { grid-template-columns: repeat(2, minmax(0,1fr)); gap: .65rem; }
+      .months-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: .5rem; }
+      .month-card { min-width: 0; padding: .6rem .35rem; }
+      .client-summary-stats { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .client-summary-stats .stat:last-child { grid-column: 1 / -1; }
+      .stat { min-width: 0; padding: .85rem .55rem; }
+      .stat-value { overflow-wrap: anywhere; }
+      .stats .stat-value { font-size: .95rem !important; }
+      .modal-overlay { align-items: flex-end; overflow-y: auto; padding-top: 1rem; }
+      .modal {
+        width: 100%; max-height: calc(100dvh - 1rem); overflow-y: auto;
+        border-radius: 16px 16px 0 0;
+        padding: 1.25rem 1rem calc(1.25rem + env(safe-area-inset-bottom));
+      }
+      .modal-actions { flex-wrap: wrap; }
+    }
   </style>
 </head>
 <body>
 
-<!-- Top nav -->
 <nav class="topnav">
   <div class="brand">🏠 <span>{{ room_name }}</span></div>
-  <!-- Desktop links -->
-  <a class="nav-icon nav-desktop" href="{{ url_for('dashboard') }}">📊 Dashboard</a>
-  <a class="nav-icon nav-desktop" href="{{ url_for('dues_report') }}">⚠️ Dues</a>
-  <a class="nav-icon nav-desktop" href="{{ url_for('add_client') }}">+ Client</a>
-  <a class="nav-icon nav-desktop" href="{{ url_for('import_excel') }}">📥 Import</a>
-  <a class="nav-icon nav-desktop" href="{{ url_for('logout') }}" style="color:rgba(255,255,255,.6);">Logout</a>
-</nav>
-
-<!-- Search bar -->
-<div class="search-wrap">
-  <form action="{{ url_for('search') }}" method="get">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
-    <input name="q" placeholder="🔍  Search by ID or name…"
-           value="{{ request.args.get('q','') }}" autocomplete="off"/>
+  <a class="nav-desktop" href="{{ url_for('dashboard') }}">Dashboard</a>
+  <a class="nav-desktop" href="{{ url_for('monthly_payments_report') }}">Reports</a>
+  <a class="nav-desktop" href="{{ url_for('dues_report') }}">Dues</a>
+  <a class="nav-desktop" href="{{ url_for('export_excel') }}">Export</a>
+  <a class="nav-desktop" href="{{ url_for('add_client') }}">+ Client</a>
+  <a class="nav-desktop" href="{{ url_for('import_excel') }}">📥 Import</a>
+  <a class="nav-desktop" href="{{ url_for('logout') }}" style="color:rgba(255,255,255,.6);">Logout</a>
+  <form class="search-bar" action="{{ url_for('search') }}" method="get">
+    <input name="q" placeholder="Search by ID or name…" value="{{ request.args.get('q','') }}"/>
     <button type="submit">Search</button>
   </form>
-</div>
+</nav>
 
 <main>
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -278,58 +282,52 @@
       <div class="flash flash-{{ cat }}">{{ msg }}</div>
     {% endfor %}
   {% endwith %}
+
   {% block content %}{% endblock %}
 </main>
 
-<!-- Bottom nav (mobile) -->
 <nav class="bottom-nav">
   <ul>
-    <li><a href="{{ url_for('dashboard') }}" {% if request.endpoint=='dashboard' %}class="active"{% endif %}>
-      <span class="icon">📊</span>Home</a></li>
-    <li><a href="{{ url_for('dues_report') }}" {% if request.endpoint=='dues_report' %}class="active"{% endif %}>
-      <span class="icon">⚠️</span>Dues</a></li>
-    <li><a href="{{ url_for('add_client') }}" {% if request.endpoint=='add_client' %}class="active"{% endif %}>
-      <span class="icon">➕</span>Add</a></li>
-    <li><a href="{{ url_for('import_excel') }}" {% if request.endpoint=='import_excel' %}class="active"{% endif %}>
-      <span class="icon">📥</span>Import</a></li>
-    <li><a href="{{ url_for('logout') }}">
-      <span class="icon">🔐</span>Logout</a></li>
+    <li><a href="{{ url_for('dashboard') }}" {% if request.endpoint=='dashboard' %}class="active"{% endif %}><span class="icon">📊</span>Home</a></li>
+    <li><a href="{{ url_for('monthly_payments_report') }}" {% if request.endpoint=='monthly_payments_report' %}class="active"{% endif %}><span class="icon">💰</span>Report</a></li>
+    <li><a href="{{ url_for('dues_report') }}" {% if request.endpoint=='dues_report' %}class="active"{% endif %}><span class="icon">⚠️</span>Dues</a></li>
+    <li><a href="{{ url_for('add_client') }}" {% if request.endpoint=='add_client' %}class="active"{% endif %}><span class="icon">➕</span>Add</a></li>
+    <li><a href="{{ url_for('import_excel') }}" {% if request.endpoint=='import_excel' %}class="active"{% endif %}><span class="icon">📥</span>Import</a></li>
+    <li><a href="{{ url_for('logout') }}"><span class="icon">🔐</span>Logout</a></li>
   </ul>
 </nav>
 
 <!-- ── Global Pay Modal ── -->
 <div class="modal-overlay" id="payModal">
   <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">💰 Record Payment</div>
+    <div class="modal-title" id="pay_modal_title">💰 Record Payment</div>
     <form method="post" action="{{ url_for('record_payment') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
-      <input type="hidden" name="client_id"   id="m_client_id"/>
-      <input type="hidden" name="year"         id="m_year"/>
-      <input type="hidden" name="month"        id="m_month"/>
+      <input type="hidden" name="client_id" id="modal_client_id"/>
+      <input type="hidden" name="year"       id="modal_year"/>
+      <input type="hidden" name="month"      id="modal_month"/>
 
       <div class="form-group">
         <label>Month</label>
-        <input id="m_month_disp" readonly style="background:#f9fafb;font-weight:600;"/>
+        <input type="text" id="modal_month_display" readonly style="background:#f9fafb; font-weight:600;"/>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>Amount Due (AED)</label>
-          <input type="number" name="amount_due" id="m_due" step="0.01" min="0" inputmode="decimal"/>
+          <input type="number" name="amount_due" id="modal_due" step="0.01" min="0"/>
         </div>
         <div class="form-group">
           <label>Amount Paying (AED)</label>
-          <input type="number" name="amount_paid" id="m_paid" step="0.01" min="0"
-                 required inputmode="decimal"/>
+          <input type="number" name="amount_paid" id="modal_paid" step="0.01" min="0" required/>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>Payment Date</label>
-          <input type="date" name="paid_date" id="m_date"/>
+          <input type="date" name="paid_date" id="modal_date"/>
         </div>
         <div class="form-group">
-          <label>Method</label>
+          <label>Payment Method</label>
           <select name="payment_method">
             <option value="cash">💵 Cash</option>
             <option value="bank_transfer">🏦 Bank Transfer</option>
@@ -340,20 +338,19 @@
       </div>
       <div class="form-group">
         <label>Notes (optional)</label>
-        <input type="text" name="notes" placeholder="e.g. paid in full…"/>
+        <input type="text" name="notes" placeholder="e.g. Cash, Bank transfer…"/>
       </div>
       <div class="modal-actions">
-        <button type="button" class="btn btn-ghost btn-block" onclick="closeModal('payModal')">Cancel</button>
-        <button type="submit" class="btn btn-success btn-block">✔ Save</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('payModal')">Cancel</button>
+        <button type="submit" class="btn btn-success" id="pay_modal_submit">✔ Save Payment</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- ── Confirm Delete Modal ── -->
-<div class="modal-overlay confirm-modal" id="deleteModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width:380px;">
     <div class="modal-title">🗑️ Delete Client?</div>
     <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">
       This will permanently delete <b id="del_name"></b> and all their payment records. This cannot be undone.
@@ -361,48 +358,215 @@
     <form method="post" id="deleteForm">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
       <div class="modal-actions">
-        <button type="button" class="btn btn-ghost btn-block" onclick="closeModal('deleteModal')">Cancel</button>
-        <button type="submit" class="btn btn-danger btn-block">🗑️ Delete</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('deleteModal')">Cancel</button>
+        <button type="submit" class="btn btn-danger">🗑️ Delete Permanently</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editPaymentModal">
+  <div class="modal">
+    <div class="modal-title">✏️ Edit Monthly Transaction</div>
+    <form method="post" id="editPaymentForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+      <div class="form-group">
+        <label>Month</label>
+        <input type="text" id="edit_payment_month" readonly/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Amount Due (AED)</label>
+          <input type="number" name="amount_due" id="edit_payment_due" min="0" step="0.01" required/>
+        </div>
+        <div class="form-group">
+          <label>Amount Paid (AED)</label>
+          <input type="number" name="amount_paid" id="edit_payment_paid" min="0" step="0.01" required/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Payment Date</label>
+          <input type="date" name="paid_date" id="edit_payment_date"/>
+        </div>
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select name="payment_method" id="edit_payment_method">
+            <option value="cash">Cash</option>
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="online">Online</option>
+            <option value="cheque">Cheque</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea name="notes" id="edit_payment_notes" rows="3"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('editPaymentModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="deletePaymentModal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-title">🗑️ Delete Monthly Transaction?</div>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">
+      Delete the full payment entry for <b id="delete_payment_month"></b>? This cannot be undone.
+    </p>
+    <form method="post" id="deletePaymentForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('deletePaymentModal')">Cancel</button>
+        <button type="submit" class="btn btn-danger">Delete Entry</button>
       </div>
     </form>
   </div>
 </div>
 
 <script>
-// ── Modal helpers ──
-function openModal(id){ document.getElementById(id).classList.add('open'); }
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(el=>{
-  el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open'); });
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Close on backdrop click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
 });
 
-// ── Pay modal ──
-function openPayModal(clientId, year, month, monthName, due){
-  document.getElementById('m_client_id').value = clientId;
-  document.getElementById('m_year').value       = year;
-  document.getElementById('m_month').value      = month;
-  document.getElementById('m_month_disp').value = monthName + ' ' + year;
-  document.getElementById('m_due').value        = due || 525;
-  document.getElementById('m_paid').value       = due || 525;
-  // Default date = today
-  document.getElementById('m_date').value = new Date().toISOString().slice(0,10);
+function openPayModal(clientId, year, month, monthName, due, isAdditional = false) {
+  document.getElementById('modal_client_id').value    = clientId;
+  document.getElementById('modal_year').value         = year;
+  document.getElementById('modal_month').value        = month;
+  document.getElementById('modal_month_display').value = monthName + ' ' + year;
+  document.getElementById('modal_due').value          = due || 525;
+  document.getElementById('modal_paid').value         = isAdditional ? 0 : (due || 525);
+  document.getElementById('modal_date').value         = new Date().toISOString().slice(0,10);
+  document.getElementById('pay_modal_title').textContent = isAdditional ? '💰 Add Payment' : '💰 Record Payment';
+  document.getElementById('pay_modal_submit').textContent = isAdditional ? '✔ Add Amount' : '✔ Save Payment';
   openModal('payModal');
-  setTimeout(()=>document.getElementById('m_paid').focus(),300);
+  setTimeout(() => document.getElementById('modal_paid').focus(), 200);
 }
 
-// ── Delete modal ──
-function openDeleteModal(clientId, clientName){
-  document.getElementById('del_name').textContent = clientName;
-  document.getElementById('deleteForm').action = '/client/'+clientId+'/delete';
+function openDeleteModal(clientId, clientName) {
+  document.getElementById('del_name').textContent  = clientName;
+  document.getElementById('deleteForm').action     = '/client/' + clientId + '/delete';
   openModal('deleteModal');
 }
 
-// ── WhatsApp share ──
-function shareWhatsApp(mobile, text){
-  const phone = mobile.replace(/\D/g,'');
-  const url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(text);
-  window.open(url, '_blank');
+function openEditPaymentModal(button) {
+  document.getElementById('editPaymentForm').action = '/payment/' + button.dataset.paymentId + '/edit';
+  document.getElementById('edit_payment_month').value = button.dataset.monthName + ' ' + button.dataset.year;
+  document.getElementById('edit_payment_due').value = button.dataset.due;
+  document.getElementById('edit_payment_paid').value = button.dataset.paid;
+  document.getElementById('edit_payment_date').value = button.dataset.paidDate;
+  document.getElementById('edit_payment_method').value = button.dataset.method || 'cash';
+  document.getElementById('edit_payment_notes').value = button.dataset.notes || '';
+  openModal('editPaymentModal');
 }
+
+function openDeletePaymentModal(button) {
+  document.getElementById('deletePaymentForm').action = '/payment/' + button.dataset.paymentId + '/delete';
+  document.getElementById('delete_payment_month').textContent = button.dataset.monthName + ' ' + button.dataset.year;
+  openModal('deletePaymentModal');
+}
+
+function shareWhatsApp(mobile, text) {
+  const phone = mobile.replace(/\D/g, '');
+  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(text), '_blank');
+}
+
+const preparedSharePdfs = new WeakMap();
+
+function prepareSharePdf(button) {
+  const buttonLabel = button.textContent.trim();
+  button.disabled = true;
+  button.setAttribute('aria-busy', 'true');
+  button.textContent = 'Preparing PDF…';
+
+  fetch(button.dataset.shareUrl, { credentials: 'same-origin' })
+    .then(response => {
+      if (!response.ok) throw new Error('Could not prepare the PDF.');
+      return response.blob();
+    })
+    .then(blob => {
+      preparedSharePdfs.set(button, blob);
+      button.disabled = false;
+      button.removeAttribute('aria-busy');
+      button.textContent = buttonLabel;
+    })
+    .catch(() => {
+      button.disabled = false;
+      button.removeAttribute('aria-busy');
+      button.textContent = buttonLabel;
+      button.dataset.shareError = 'true';
+    });
+}
+
+function downloadPdfAndOpenWhatsApp(button, blob, message) {
+  const downloadUrl = URL.createObjectURL(blob);
+  const downloadLink = document.createElement('a');
+  downloadLink.href = downloadUrl;
+  downloadLink.download = button.dataset.filename;
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  downloadLink.remove();
+  window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 30000);
+
+  const phone = (button.dataset.mobile || '').replace(/\D/g, '');
+  const target = phone ? 'https://wa.me/' + phone : 'https://wa.me/';
+  const whatsappLink = document.createElement('a');
+  whatsappLink.href = target + '?text=' + encodeURIComponent(message + '\n\nKindly find the statement in the PDF attachment.');
+  whatsappLink.target = '_blank';
+  whatsappLink.rel = 'noopener';
+  document.body.appendChild(whatsappLink);
+  whatsappLink.click();
+  whatsappLink.remove();
+  window.alert('The PDF was downloaded. Attach it to the WhatsApp message before sending.');
+}
+
+function sharePdfToWhatsApp(button) {
+  const blob = preparedSharePdfs.get(button);
+  if (!blob) {
+    window.alert(button.dataset.shareError
+      ? 'The PDF could not be prepared. Use the PDF button to download the statement.'
+      : 'The PDF is still preparing. Wait a moment, then tap Share PDF again.');
+    return;
+  }
+
+  const message = button.dataset.shareMessage || 'Please find the attached rent statement.';
+  const file = new File([blob], button.dataset.filename, { type: 'application/pdf' });
+  let canShareFile = false;
+  try {
+    canShareFile = window.isSecureContext && navigator.share && navigator.canShare &&
+      navigator.canShare({ files: [file] });
+  } catch (_) {
+    canShareFile = false;
+  }
+
+  if (!canShareFile) {
+    downloadPdfAndOpenWhatsApp(button, blob, message);
+    return;
+  }
+
+  try {
+    navigator.share({ files: [file], title: button.dataset.filename, text: message })
+      .catch(error => {
+        if (error.name !== 'AbortError') {
+          window.alert('The mobile share sheet could not open. Download the PDF and attach it in WhatsApp.');
+        }
+      });
+  } catch (_) {
+    window.alert('The mobile share sheet could not open. Download the PDF and attach it in WhatsApp.');
+  }
+}
+
+document.querySelectorAll('.share-pdf-whatsapp').forEach(button => {
+  button.addEventListener('click', () => sharePdfToWhatsApp(button));
+  prepareSharePdf(button);
+});
 </script>
 
 {% block scripts %}{% endblock %}

@@ -162,9 +162,10 @@ CREATE TABLE IF NOT EXISTS payments (
 );
 
 CREATE TABLE IF NOT EXISTS old_balances (
-    client_id  INTEGER PRIMARY KEY REFERENCES clients(id),
+    client_id  INTEGER NOT NULL REFERENCES clients(id),
     year       INTEGER NOT NULL,
-    amount     NUMERIC(10,2) DEFAULT 0
+    amount     NUMERIC(10,2) DEFAULT 0,
+    PRIMARY KEY (client_id, year)
 );
 """
 
@@ -214,6 +215,32 @@ def init_schema():
             conn.executescript(SCHEMA_SQLITE)
         # Migrations — safe to run repeatedly
         if _use_postgres():
+            conn.execute("""
+                DO $$
+                DECLARE current_pk TEXT;
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'old_balances'::regclass
+                          AND contype = 'p'
+                          AND conkey = ARRAY[
+                              (SELECT attnum FROM pg_attribute
+                               WHERE attrelid = 'old_balances'::regclass AND attname = 'client_id'),
+                              (SELECT attnum FROM pg_attribute
+                               WHERE attrelid = 'old_balances'::regclass AND attname = 'year')
+                          ]::smallint[]
+                    ) THEN
+                        SELECT conname INTO current_pk
+                        FROM pg_constraint
+                        WHERE conrelid = 'old_balances'::regclass AND contype = 'p';
+                        IF current_pk IS NOT NULL THEN
+                            EXECUTE format('ALTER TABLE old_balances DROP CONSTRAINT %I', current_pk);
+                        END IF;
+                        ALTER TABLE old_balances
+                            ADD CONSTRAINT old_balances_pkey PRIMARY KEY (client_id, year);
+                    END IF;
+                END $$
+            """)
             conn.execute("""
                 ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'cash'
             """)

@@ -10,7 +10,8 @@
 <div class="flash flash-{{ message[0] }}">{{ message[1] }}</div>
 {% endif %}
 
-<div class="card" style="max-width:520px;">
+<div class="import-layout">
+<div class="card import-panel">
   <div class="card-title">📊 Import from Excel File</div>
   <p style="font-size:.87rem;color:var(--muted);margin-bottom:1rem;">
     This will <b>reset and re-import</b> all data for the selected year from your Excel file.
@@ -30,7 +31,7 @@
     </div>
     <div class="form-group">
       <label>Excel Password</label>
-      <input type="password" name="password" value="9745437665" autocomplete="current-password"/>
+      <input type="password" name="password" autocomplete="off" required/>
     </div>
     <button type="submit" class="btn btn-primary btn-block btn-lg">
       📥 Import / Reset Data
@@ -38,7 +39,7 @@
   </form>
 </div>
 
-<div class="card" style="max-width:520px;">
+<div class="card import-notes">
   <div class="card-title">ℹ️ Notes</div>
   <ul style="font-size:.87rem;color:var(--muted);padding-left:1.2rem;line-height:1.8;">
     <li>Importing will <b>delete existing data</b> for that year and re-import fresh from the Excel file.</li>
@@ -46,5 +47,6 @@
     <li>New clients found in the Excel file will be <b>added automatically</b>.</li>
     <li>Use the workbook password supplied with the source file.</li>
   </ul>
+</div>
 </div>
 {% endblock %}

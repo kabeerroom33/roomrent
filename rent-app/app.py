@@ -466,15 +466,18 @@ def import_excel():
     if request.method == 'POST':
         year = int(request.form.get('year', datetime.now().year))
         selected_year = year
-        password = request.form.get('password', '9745437665')
-        try:
-            count = _do_import(year, password)
-            message = ('success', f'✅ Imported {count} payment records for {year}')
-        except Exception as e:
-            message = ('error', f'Error: {e}')
+        password = request.form.get('password', '').strip()
+        if not password:
+            message = ('error', 'Enter the Excel workbook password before importing.')
+        else:
+            try:
+                count = _do_import(year, password)
+                message = ('success', f'✅ Imported {count} payment records for {year}')
+            except Exception as e:
+                message = ('error', f'Error: {e}')
     return render_template('import.html', message=message, years=years, selected_year=selected_year)
 
-def _do_import(year, password='9745437665'):
+def _do_import(year, password):
     import msoffcrypto, openpyxl
     months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
     fname = os.path.join(os.path.dirname(__file__), '..', f'ROOM RENT JAN TO DEC {year}.xlsx')

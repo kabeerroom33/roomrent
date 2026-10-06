@@ -10,7 +10,7 @@ services:
     envVars:
       - key: SECRET_KEY
         generateValue: true
-      - key: DATABASE_URL
+      - key: DATABASE_URL=postgresql://postgres:kabeer33room@db.juwmyppqlpmividjcfss.supabase.co:5432/postgres?sslmode=require
         fromDatabase:
           name: roomrent-db
           property: connectionString

@@ -243,6 +243,7 @@
     }
     @media(max-width: 680px) {
       .import-layout { grid-template-columns: minmax(0, 1fr); }
+      body.import-page main { display: none; }
       .bottom-nav { display: block; }
       .topnav .nav-desktop { display: none; }
       body { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
@@ -265,7 +266,7 @@
     }
   </style>
 </head>
-<body>
+<body{% if request.endpoint == 'import_excel' %} class="import-page"{% endif %}>
 
 <nav class="topnav">
   <div class="brand">🏠 <span>{{ room_name }}</span></div>
@@ -298,7 +299,6 @@
     <li><a href="{{ url_for('monthly_payments_report') }}" {% if request.endpoint=='monthly_payments_report' %}class="active"{% endif %}><span class="icon">💰</span>Report</a></li>
     <li><a href="{{ url_for('dues_report') }}" {% if request.endpoint=='dues_report' %}class="active"{% endif %}><span class="icon">⚠️</span>Dues</a></li>
     <li><a href="{{ url_for('add_client') }}" {% if request.endpoint=='add_client' %}class="active"{% endif %}><span class="icon">➕</span>Add</a></li>
-    <li><a href="{{ url_for('import_excel') }}" {% if request.endpoint=='import_excel' %}class="active"{% endif %}><span class="icon">📥</span>Import</a></li>
     <li><a href="{{ url_for('logout') }}"><span class="icon">🔐</span>Logout</a></li>
   </ul>
 </nav>

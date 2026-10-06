@@ -21,17 +21,22 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
     <div class="form-group">
       <label>Year to import</label>
-      <select name="year">
+      <select name="year" required>
+        <option value="" disabled {% if not request.form.get('year') %}selected{% endif %}>Choose a year</option>
         {% for available_year in years %}
-        <option value="{{ available_year }}" {% if available_year==selected_year %}selected{% endif %}>
+        <option value="{{ available_year }}" {% if request.form.get('year')|int == available_year %}selected{% endif %}>
           {{ available_year }} — ROOM RENT JAN TO DEC {{ available_year }}.xlsx
         </option>
         {% endfor %}
       </select>
     </div>
     <div class="form-group">
-      <label>Excel Password</label>
-      <input type="password" name="password" autocomplete="off" required/>
+      <label for="admin-password">Admin Password</label>
+      <input id="admin-password" type="password" name="admin_password" autocomplete="current-password" required/>
+    </div>
+    <div class="form-group">
+      <label for="workbook-password">Excel Workbook Password</label>
+      <input id="workbook-password" type="password" name="workbook_password" autocomplete="off" required/>
     </div>
     <button type="submit" class="btn btn-primary btn-block btn-lg">
       📥 Import / Reset Data

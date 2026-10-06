@@ -462,20 +462,24 @@ def import_excel():
     """Import or re-import data from Excel files."""
     message = None
     years = get_available_years()
-    selected_year = datetime.now().year
     if request.method == 'POST':
-        year = int(request.form.get('year', datetime.now().year))
-        selected_year = year
-        password = request.form.get('password', '').strip()
-        if not password:
+        year_value = request.form.get('year', '').strip()
+        admin_password = request.form.get('admin_password', '')
+        workbook_password = request.form.get('workbook_password', '').strip()
+        if not year_value.isdigit() or int(year_value) not in years:
+            message = ('error', 'Choose a year before importing.')
+        elif not check_password_hash(ADMIN_PASSWORD_HASH, admin_password):
+            message = ('error', 'The admin password is incorrect.')
+        elif not workbook_password:
             message = ('error', 'Enter the Excel workbook password before importing.')
         else:
+            year = int(year_value)
             try:
-                count = _do_import(year, password)
+                count = _do_import(year, workbook_password)
                 message = ('success', f'✅ Imported {count} payment records for {year}')
             except Exception as e:
                 message = ('error', f'Error: {e}')
-    return render_template('import.html', message=message, years=years, selected_year=selected_year)
+    return render_template('import.html', message=message, years=years)
 
 def _do_import(year, password):
     import msoffcrypto, openpyxl
@@ -536,7 +540,7 @@ def _do_import(year, password):
             with get_db() as conn:
                 conn.execute(
                     "INSERT INTO old_balances (client_id, year, amount) VALUES (?,?,?) "
-                    "ON CONFLICT(client_id) DO UPDATE SET amount=EXCLUDED.amount, year=EXCLUDED.year"
+                    "ON CONFLICT(client_id, year) DO UPDATE SET amount=EXCLUDED.amount"
                     if os.environ.get('DATABASE_URL') else
                     "INSERT OR REPLACE INTO old_balances (client_id, year, amount) VALUES (?,?,?)",
                     (no, year, ob_net))

@@ -10,12 +10,12 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        value: postgresql://postgres:kabeer33room@db.juwmyppqlpmividjcfss.supabase.co:5432/postgres?sslmode=require
+        sync: false
       - key: ROOM_NAME
         value: Room 33
       - key: RENDER
         value: true
       - key: ADMIN_PASSWORD_HASH
-        value: "REPLACE_WITH_HASH_FROM_LOCAL_MACHINE"
+        sync: false
 
-    healthCheckPath: /
+    healthCheckPath: /health

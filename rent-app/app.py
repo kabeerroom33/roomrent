@@ -18,6 +18,7 @@ from db import get_db, init_schema
 # ─── App setup ─────────────────────────────────────────────────────────────────
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
@@ -359,28 +360,28 @@ def monthly_payments_report():
     year = int(request.args.get('year', datetime.now().year))
     years = get_available_years()
 
-    with get_db() as conn:
-        conn.execute("SELECT * FROM clients WHERE active=1 AND is_hidden=0 ORDER BY id")
-        clients = conn.fetchall()
-
     monthly_totals = {month: 0.0 for month in MONTHS}
     report_rows = []
+    month_columns = ', '.join(
+        f"COALESCE(SUM(CASE WHEN p.month='{month}' THEN p.amount_paid ELSE 0 END), 0) AS {month}"
+        for month in MONTHS
+    )
+    with get_db() as conn:
+        conn.execute(f"""
+            SELECT c.id, c.name, c.room_no, c.mobile, {month_columns}
+            FROM clients AS c
+            LEFT JOIN payments AS p ON p.client_id=c.id AND p.year=?
+            WHERE c.active=1 AND c.is_hidden=0
+            GROUP BY c.id, c.name, c.room_no, c.mobile
+            ORDER BY c.id
+        """, (year,))
+        clients = conn.fetchall()
 
     for client in clients:
-        monthly_amounts = {}
-        total = 0.0
-        for month in MONTHS:
-            with get_db() as conn:
-                conn.execute(
-                    "SELECT COALESCE(SUM(amount_paid), 0) AS paid FROM payments WHERE client_id=? AND year=? AND month=?",
-                    (client['id'], year, month)
-                )
-                payment = conn.fetchone()
-            amount = float(payment['paid']) if payment else 0.0
-            monthly_amounts[month] = amount
-            total += amount
+        monthly_amounts = {month: float(client[month] or 0) for month in MONTHS}
+        total = sum(monthly_amounts.values())
+        for month, amount in monthly_amounts.items():
             monthly_totals[month] += amount
-
         report_rows.append({
             'id': client['id'],
             'name': client['name'],
@@ -466,8 +467,13 @@ def import_excel():
         year_value = request.form.get('year', '').strip()
         admin_password = request.form.get('admin_password', '')
         workbook_password = request.form.get('workbook_password', '').strip()
+        workbook = request.files.get('workbook')
         if not year_value.isdigit() or int(year_value) not in years:
             message = ('error', 'Choose a year before importing.')
+        elif not workbook or not workbook.filename:
+            message = ('error', 'Choose an Excel workbook to upload.')
+        elif not workbook.filename.lower().endswith('.xlsx'):
+            message = ('error', 'Upload an Excel .xlsx workbook.')
         elif not check_password_hash(ADMIN_PASSWORD_HASH, admin_password):
             message = ('error', 'The admin password is incorrect.')
         elif not workbook_password:
@@ -475,24 +481,20 @@ def import_excel():
         else:
             year = int(year_value)
             try:
-                count = _do_import(year, workbook_password)
+                count = _do_import(year, workbook_password, workbook.stream)
                 message = ('success', f'✅ Imported {count} payment records for {year}')
             except Exception as e:
                 message = ('error', f'Error: {e}')
     return render_template('import.html', message=message, years=years)
 
-def _do_import(year, password):
+def _do_import(year, password, workbook_file):
     import msoffcrypto, openpyxl
     months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
-    fname = os.path.join(os.path.dirname(__file__), '..', f'ROOM RENT JAN TO DEC {year}.xlsx')
-    if not os.path.exists(fname):
-        raise FileNotFoundError(f'File not found: {fname}')
-
-    with open(fname, 'rb') as f:
-        office = msoffcrypto.OfficeFile(f)
-        office.load_key(password=password)
-        dec = io.BytesIO()
-        office.decrypt(dec)
+    workbook_file.seek(0)
+    office = msoffcrypto.OfficeFile(workbook_file)
+    office.load_key(password=password)
+    dec = io.BytesIO()
+    office.decrypt(dec)
     dec.seek(0)
     wb = openpyxl.load_workbook(dec, data_only=True)
     rent_ws = wb['Rent']

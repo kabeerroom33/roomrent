@@ -15,17 +15,21 @@
   <div class="card-title">📊 Import from Excel File</div>
   <p style="font-size:.87rem;color:var(--muted);margin-bottom:1rem;">
     This will <b>reset and re-import</b> all data for the selected year from your Excel file.
-    The Excel file must be in the app folder.
+    Choose the workbook from your device. Uploads are limited to 32 MB.
   </p>
-  <form method="post">
+  <form method="post" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+    <div class="form-group">
+      <label for="workbook-file">Excel Workbook (.xlsx)</label>
+      <input id="workbook-file" type="file" name="workbook" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required/>
+    </div>
     <div class="form-group">
       <label>Year to import</label>
       <select name="year" required>
         <option value="" disabled {% if not request.form.get('year') %}selected{% endif %}>Choose a year</option>
         {% for available_year in years %}
         <option value="{{ available_year }}" {% if request.form.get('year')|int == available_year %}selected{% endif %}>
-          {{ available_year }} — ROOM RENT JAN TO DEC {{ available_year }}.xlsx
+          {{ available_year }}
         </option>
         {% endfor %}
       </select>
@@ -51,6 +55,7 @@
     <li>Client info (name, mobile, room) from existing records is <b>preserved</b>.</li>
     <li>New clients found in the Excel file will be <b>added automatically</b>.</li>
     <li>Use the workbook password supplied with the source file.</li>
+    <li>Supported file type: Excel .xlsx, up to 32 MB.</li>
   </ul>
 </div>
 </div>

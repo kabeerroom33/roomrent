@@ -65,7 +65,7 @@
     <a class="client-card {% if c.is_hidden %}hidden-tag{% endif %}"
        href="{{ url_for('client_detail', client_id=c.id, year=year) }}"
        data-name="{{ c.name }}" data-id="{{ c.id }}" data-balance="{{ c.balance }}">
-      <div class="id-chip">{{ c.id }}</div>
+      <div class="id-chip">{{ "%03d"|format(c.id) }}</div>
       <div class="c-info">
         <div class="c-name">{{ c.name }}</div>
         <div class="c-sub">{{ c.mobile or '—' }} · {{ c.room_no or '—' }}</div>
@@ -99,7 +99,7 @@
         {% for c in summary %}
         <tr data-name="{{ c.name }}" data-id="{{ c.id }}" data-balance="{{ c.balance }}"
             class="{% if c.is_hidden %}hidden-tag{% endif %}">
-          <td><div class="id-chip">{{ c.id }}</div></td>
+          <td><div class="id-chip">{{ "%03d"|format(c.id) }}</div></td>
           <td>
             <a href="{{ url_for('client_detail', client_id=c.id, year=year) }}"
                style="font-weight:600;color:var(--secondary);text-decoration:none;">

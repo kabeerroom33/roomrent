@@ -59,7 +59,7 @@ def _header_block(styles, client, receipt_no, year, month_name=None, room_name='
     info_data = [
         [Paragraph('<b>CLIENT DETAILS</b>', styles['Cell']),
          Paragraph('<b>RECEIPT INFO</b>', styles['Cell'])],
-        [Paragraph(f"<b>ID :</b>  #{client['id']:04d}", styles['Cell']),
+        [Paragraph(f"<b>ID :</b>  #{client['id']:03d}", styles['Cell']),
          Paragraph(f"<b>Receipt No :</b>  {receipt_no}", styles['Cell'])],
         [Paragraph(f"<b>Name :</b>  {client['name']}", styles['Cell']),
          Paragraph(f"<b>Date :</b>  {now}", styles['Cell'])],
@@ -90,7 +90,7 @@ def create_receipt_pdf(data, year, month, month_names, room_name='Room 33'):
 
     client = data['client']
     month_name = month_names[month]
-    receipt_no = f"RCT-{client['id']:04d}-{year}-{month.upper()}"
+    receipt_no = f"RCT-{client['id']:03d}-{year}-{month.upper()}"
     payment = data['payments'].get(month, {})
 
     elements += _header_block(styles, client, receipt_no, year, month_name, room_name)
@@ -221,7 +221,7 @@ def create_full_statement_pdf(data, year, months, month_names, room_name='Room 3
     elements = []
 
     client = data['client']
-    receipt_no = f"STMT-{client['id']:04d}-{year}"
+    receipt_no = f"STMT-{client['id']:03d}-{year}"
 
     elements += _header_block(styles, client, receipt_no, year, 'Annual Statement', room_name)
 

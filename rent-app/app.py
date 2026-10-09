@@ -208,7 +208,7 @@ def add_client():
                 float(request.form.get('monthly_rent', 525)),
                 request.form.get('notes','').strip()
             ))
-        flash(f'Client added — ID #{new_id}', 'success')
+        flash(f'Client added — ID #{new_id:03d}', 'success')
         return redirect(url_for('client_detail', client_id=new_id))
     return render_template('add_client.html', default_room=ROOM_NAME)
 

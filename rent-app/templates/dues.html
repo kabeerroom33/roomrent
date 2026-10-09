@@ -46,7 +46,7 @@
         <tr>
           <td style="color:var(--muted);font-weight:600;">{{ loop.index }}</td>
           <td>
-            <div class="id-badge" style="width:36px;height:36px;font-size:.8rem;">{{ d.id }}</div>
+            <div class="id-badge" style="width:36px;height:36px;font-size:.8rem;">{{ "%03d"|format(d.id) }}</div>
           </td>
           <td>
             <a href="{{ url_for('client_detail', client_id=d.id, year=year) }}"

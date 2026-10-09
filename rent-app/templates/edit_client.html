@@ -7,7 +7,7 @@
     <div style="font-size:.85rem;margin-bottom:.25rem;">
       <a href="{{ url_for('client_detail', client_id=client.id) }}" style="color:var(--secondary);text-decoration:none;">← Back to Client</a>
     </div>
-    <div class="page-title">✏️ Edit Client #{{ "%04d"|format(client.id) }}</div>
+    <div class="page-title">✏️ Edit Client #{{ "%03d"|format(client.id) }}</div>
   </div>
 </div>
 

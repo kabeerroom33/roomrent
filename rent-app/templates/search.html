@@ -29,7 +29,7 @@
         {% for c in results %}
         <tr>
           <td>
-            <div class="id-badge" style="width:36px;height:36px;font-size:.8rem;">{{ c.id }}</div>
+            <div class="id-badge" style="width:36px;height:36px;font-size:.8rem;">{{ "%03d"|format(c.id) }}</div>
           </td>
           <td><b>{{ c.name }}</b></td>
           <td>{{ c.mobile or '—' }}</td>
